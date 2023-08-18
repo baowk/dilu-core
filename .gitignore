@@ -1,0 +1,14 @@
+.idea
+.vscode
+*/.DS_Store
+static/uploadfile
+main.exe
+*.exe
+temp/
+!temp
+vendor
+*/.DS_Store
+**/**.log
+# go sum
+go.sum
+
