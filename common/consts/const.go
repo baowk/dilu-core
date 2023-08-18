@@ -7,6 +7,5 @@ const (
 )
 
 const (
-	DB_DEF  = "master"
-	DB_DEMO = "demo"
+	DB_DEF = "master"
 )
