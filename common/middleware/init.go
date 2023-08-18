@@ -6,8 +6,6 @@ import (
 )
 
 func InitMiddleware(r *gin.Engine, cfg *config.AppCfg) {
-	//.Use(Options)
-	//.Use(Secure)
 	if cfg.Cors.Enable {
 		r.Use(CorsByRules(&cfg.Cors))
 	}

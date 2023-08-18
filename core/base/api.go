@@ -1,7 +1,6 @@
 package base
 
 import (
-	"github.com/baowk/dilu-core/common/codes"
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/core/errs"
@@ -24,7 +23,7 @@ func (e *BaseApi) GetTenantId(c *gin.Context) int {
 }
 
 func (e *BaseApi) Error(c *gin.Context, err error) {
-	Fail(c, codes.FAILURE, err.Error())
+	Fail(c, FAILURE, err.Error())
 }
 
 func (e *BaseApi) Fail(c *gin.Context, code int, msg string, data ...any) {
