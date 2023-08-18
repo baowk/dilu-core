@@ -3,10 +3,14 @@ package base
 import (
 	"net/http"
 
-	"github.com/baowk/dilu-core/common/codes"
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/core/errs"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	OK      = 200
+	FAILURE = 500
 )
 
 type Resp struct {
@@ -28,7 +32,7 @@ type PageResp struct {
 func Ok(c *gin.Context, data any) {
 	c.AbortWithStatusJSON(http.StatusOK, Resp{
 		ReqId: c.GetString(consts.REQ_ID),
-		Code:  codes.SUCCESS,
+		Code:  OK,
 		Msg:   "ok",
 		Data:  data,
 	})
