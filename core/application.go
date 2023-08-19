@@ -93,16 +93,17 @@ func Run(appRs *[]func()) {
 			log.Fatal("listen: ", err)
 		}
 	}()
-	fmt.Println("Server started ,Listen: " + addr)
+	fmt.Println(`Dilu github: https://github.com/baowk/dilu`)
+	fmt.Println("Dilu Server started ,Listen: " + addr)
 
-	// if Cfg.Server.Mode != ModeProd.String() {
-	// 	fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
-	// 	fmt.Printf("Swagger: http://localhost:%d/swagger/index.html \r\n", Cfg.Server.Port)
-	// 	ip := utils.GetLocalHost()
-	// 	if ip != "" {
-	// 		fmt.Printf("Swagger: http://%s:%d/swagger/index.html \r\n", ip, Cfg.Server.Port)
-	// 	}
-	// }
+	if Cfg.Server.Mode != ModeProd.String() {
+		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
+		fmt.Printf("Swagger: http://localhost:%d/swagger/index.html \r\n", Cfg.Server.Port)
+		ip := utils.GetLocalHost()
+		if ip != "" {
+			fmt.Printf("Swagger: http://%s:%d/swagger/index.html \r\n", ip, Cfg.Server.Port)
+		}
+	}
 
 	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
 	quit := make(chan os.Signal, 1)
