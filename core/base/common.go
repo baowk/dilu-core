@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/baowk/dilu-core/core"
+	"github.com/baowk/dilu-core/core/i18n"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/language"
 )
@@ -21,8 +22,8 @@ func GetMsgByCode(c *gin.Context, code int) string {
 		acceptLanguate := GetAcceptLanguage(c)
 		tags, _, _ := language.ParseAcceptLanguage(acceptLanguate)
 		if len(tags) > 0 {
-			return core.I18n.GetMsg(code, tags[0].String())
+			return i18n.Lang.GetMsg(code, tags[0].String())
 		}
 	}
-	return core.I18n.GetMsg(code, core.Cfg.Server.GetLang())
+	return i18n.Lang.GetMsg(code, core.Cfg.Server.GetLang())
 }

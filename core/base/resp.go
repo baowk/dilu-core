@@ -27,36 +27,92 @@ type PageResp struct {
 	Page  int   `json:"page"`  //当前第几页
 }
 
-//type RespFunc func()
+type Option func(resp *Resp)
 
-func Ok(c *gin.Context, data any) {
+// func NewResp(opts ...Option) *Resp {
+// 	r := new(Resp)
+// 	for _, f := range opts {
+// 		f(r)
+// 	}
+// 	return r
+// }
+
+func WithReqId(reqId string) Option {
+	return func(resp *Resp) {
+		resp.ReqId = reqId
+	}
+}
+
+func WithCode(code int) Option {
+	return func(resp *Resp) {
+		resp.Code = code
+	}
+}
+
+func WithMsg(msg string) Option {
+	return func(resp *Resp) {
+		resp.Msg = msg
+	}
+}
+
+func WithData(data any) Option {
+	return func(resp *Resp) {
+		resp.Data = data
+	}
+}
+
+func result(c *gin.Context, opts ...Option) {
+	r := new(Resp)
+	for _, f := range opts {
+		f(r)
+	}
+	c.AbortWithStatusJSON(http.StatusOK, *r)
+}
+
+func ok(c *gin.Context, data ...any) {
 	c.AbortWithStatusJSON(http.StatusOK, Resp{
 		ReqId: c.GetString(consts.REQ_ID),
-		Code:  OK,
-		Msg:   "ok",
+		Code:  http.StatusOK,
+		Msg:   "success",
 		Data:  data,
 	})
 }
 
-func Err(c *gin.Context, err errs.IError, msg string) {
-	Fail(c, err.Code(), msg)
+func errer(c *gin.Context, err errs.IError) {
+	msg := GetMsgByCode(c, err.Code())
+	retMsg(c, err.Code(), msg)
 }
 
-func Fail(c *gin.Context, code int, msg string, data ...any) {
-	c.AbortWithStatusJSON(http.StatusOK, Resp{
-		ReqId: c.GetString(consts.REQ_ID),
-		Code:  code,
-		Msg:   msg,
-		Data:  data,
-	})
+func retMsg(c *gin.Context, code int, msg string, data ...any) {
+	if len(data) == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+		})
+	} else if len(data) == 1 {
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+			Data:  data[0],
+		})
+	} else {
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+			Data:  data,
+		})
+	}
 }
 
-func Page(c *gin.Context, list any, total int64, page int, pageSize int) {
+func pageResp(c *gin.Context, list any, total int64, page int, pageSize int) {
 	p := PageResp{
 		Page:  page,
 		Total: total,
 		Size:  pageSize,
 		List:  list,
 	}
-	Ok(c, p)
+	ok(c, http.StatusOK, "OK", p)
 }

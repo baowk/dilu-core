@@ -23,23 +23,28 @@ func (e *BaseApi) GetTenantId(c *gin.Context) int {
 }
 
 func (e *BaseApi) Error(c *gin.Context, err error) {
-	Fail(c, FAILURE, err.Error())
+	retMsg(c, FAILURE, err.Error())
+
 }
 
 func (e *BaseApi) Fail(c *gin.Context, code int, msg string, data ...any) {
-	Fail(c, code, msg, data)
+	retMsg(c, code, msg, data)
 }
 
 func (e *BaseApi) Err(c *gin.Context, err errs.IError) {
-	Err(c, err, GetMsgByCode(c, err.Code()))
+	errer(c, err)
 }
 
 func (e *BaseApi) Ok(c *gin.Context, data ...any) {
-	Ok(c, data)
+	ok(c, data)
+}
+
+func (e *BaseApi) ResCustom(c *gin.Context, opts ...Option) {
+	result(c, opts...)
 }
 
 func (e *BaseApi) Page(c *gin.Context, list any, total int64, page, size int) {
-	Page(c, list, total, page, size)
+	pageResp(c, list, total, page, size)
 }
 
 //封装后代码路径指定到这里所以去掉

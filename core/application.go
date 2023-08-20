@@ -14,7 +14,6 @@ import (
 	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
-	"github.com/baowk/dilu-core/core/i18n"
 	"github.com/baowk/dilu-core/core/inter"
 	"github.com/gin-gonic/gin"
 
@@ -30,7 +29,7 @@ var (
 	lock   sync.RWMutex
 	engine http.Handler
 	dbs    = make(map[string]*gorm.DB, 0)
-	I18n   i18n.I18n
+	//I18n   i18n.I18n
 )
 
 func GetEngine() http.Handler {

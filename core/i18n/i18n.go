@@ -1,9 +1,11 @@
 package i18n
 
-type I18n interface {
+var Lang ILang
+
+type ILang interface {
 	GetMsg(code int, lang string) (str string)
 }
 
-func Register(i I18n) {
-
+func Register(i ILang) {
+	Lang = i
 }
