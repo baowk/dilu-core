@@ -23,12 +23,12 @@ func (e *BaseApi) GetTenantId(c *gin.Context) int {
 }
 
 func (e *BaseApi) Error(c *gin.Context, err error) {
-	retMsg(c, FAILURE, err.Error())
+	resMsg(c, FAILURE, err.Error())
 
 }
 
 func (e *BaseApi) Fail(c *gin.Context, code int, msg string, data ...any) {
-	retMsg(c, code, msg, data)
+	resMsg(c, code, msg, data...)
 }
 
 func (e *BaseApi) Err(c *gin.Context, err errs.IError) {
@@ -36,7 +36,7 @@ func (e *BaseApi) Err(c *gin.Context, err errs.IError) {
 }
 
 func (e *BaseApi) Ok(c *gin.Context, data ...any) {
-	ok(c, data)
+	ok(c, data...)
 }
 
 func (e *BaseApi) ResCustom(c *gin.Context, opts ...Option) {

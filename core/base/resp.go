@@ -71,15 +71,17 @@ func result(c *gin.Context, opts ...Option) {
 }
 
 func ok(c *gin.Context, data ...any) {
-	retMsg(c, http.StatusOK, "OK", data)
+	resMsg(c, http.StatusOK, "OK", data...)
 }
 
 func errer(c *gin.Context, err errs.IError) {
-	msg := i18n.Lang.GetMsg(err.Code(), c)
-	retMsg(c, err.Code(), msg)
+	resMsg(c, err.Code(), "")
 }
 
-func retMsg(c *gin.Context, code int, msg string, data ...any) {
+func resMsg(c *gin.Context, code int, msg string, data ...any) {
+	if msg == "" {
+		msg = i18n.Lang.GetMsg(code, c)
+	}
 	if len(data) == 0 {
 		c.AbortWithStatusJSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
@@ -110,5 +112,5 @@ func pageResp(c *gin.Context, list any, total int64, page int, pageSize int) {
 		Size:  pageSize,
 		List:  list,
 	}
-	ok(c, http.StatusOK, "OK", p)
+	resMsg(c, http.StatusOK, "OK", p)
 }
