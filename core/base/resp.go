@@ -5,6 +5,7 @@ import (
 
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/core/errs"
+	"github.com/baowk/dilu-core/core/i18n"
 	"github.com/gin-gonic/gin"
 )
 
@@ -74,7 +75,7 @@ func ok(c *gin.Context, data ...any) {
 }
 
 func errer(c *gin.Context, err errs.IError) {
-	msg := GetMsgByCode(c, err.Code())
+	msg := i18n.Lang.GetMsg(err.Code(), c)
 	retMsg(c, err.Code(), msg)
 }
 
