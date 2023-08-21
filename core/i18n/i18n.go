@@ -6,9 +6,7 @@ var Lang ILang
 
 type ILang interface {
 	GetMsg(code int, c *gin.Context) string
-	//SetEnable(enable bool)
-	Enable()
-	//SetDefLang(lang string)
+	Enable() bool
 	DefLang() string
 }
 
