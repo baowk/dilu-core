@@ -70,12 +70,7 @@ func result(c *gin.Context, opts ...Option) {
 }
 
 func ok(c *gin.Context, data ...any) {
-	c.AbortWithStatusJSON(http.StatusOK, Resp{
-		ReqId: c.GetString(consts.REQ_ID),
-		Code:  http.StatusOK,
-		Msg:   "success",
-		Data:  data,
-	})
+	retMsg(c, http.StatusOK, "OK", data)
 }
 
 func errer(c *gin.Context, err errs.IError) {
