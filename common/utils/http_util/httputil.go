@@ -10,6 +10,12 @@ func New() *HTTPClient {
 	return &HTTPClient{}
 }
 
+func NewUrl(baseUrl string) *HTTPClient {
+	return &HTTPClient{
+		BaseURL: baseUrl,
+	}
+}
+
 // HTTPClient 封装了HTTP客户端的功能
 type HTTPClient struct {
 	BaseURL string
