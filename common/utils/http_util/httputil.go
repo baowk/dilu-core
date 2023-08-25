@@ -6,10 +6,29 @@ import (
 	"net/http"
 )
 
+func New() *HTTPClient {
+	return &HTTPClient{}
+}
+
 // HTTPClient 封装了HTTP客户端的功能
 type HTTPClient struct {
 	BaseURL string
 	Headers map[string]string
+}
+
+func (c *HTTPClient) SetHeaders(headers map[string]string) *HTTPClient {
+	(*c).Headers = headers
+	return c
+}
+
+func (c *HTTPClient) AddHeader(name, val string) *HTTPClient {
+	(*c).Headers[name] = val
+	return c
+}
+
+func (c *HTTPClient) SetBaseUrl(baseUrl string) *HTTPClient {
+	(*c).BaseURL = baseUrl
+	return c
 }
 
 // Get 发送GET请求
@@ -67,6 +86,5 @@ func do(req *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return body, nil
 }
