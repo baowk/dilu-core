@@ -23,13 +23,12 @@ import (
 )
 
 var (
-	Cfg    config.AppCfg
+	Cfg    *config.AppCfg
 	Log    *zap.Logger
 	Cache  cache.ICache
 	lock   sync.RWMutex
 	engine http.Handler
 	dbs    = make(map[string]*gorm.DB, 0)
-	//I18n   i18n.I18n
 )
 
 func GetEngine() http.Handler {
@@ -144,5 +143,5 @@ func zapInit() (logger *zap.Logger) {
 func initRouter() {
 	//初始化gin
 	r := GetGinEngine()
-	inter.Init(r, &Cfg)
+	inter.Init(r, Cfg)
 }

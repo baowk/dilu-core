@@ -1,7 +1,6 @@
 package base
 
 import (
-	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/core/errs"
 	"github.com/gin-gonic/gin"
@@ -12,14 +11,6 @@ type BaseApi struct {
 
 func (e *BaseApi) GetReqId(c *gin.Context) string {
 	return utils.GetReqId(c)
-}
-
-func (e *BaseApi) GetUserId(c *gin.Context) int {
-	return c.GetInt(consts.USER_ID)
-}
-
-func (e *BaseApi) GetTenantId(c *gin.Context) int {
-	return c.GetInt(consts.TENANT_ID)
 }
 
 func (e *BaseApi) Error(c *gin.Context, err error) {
