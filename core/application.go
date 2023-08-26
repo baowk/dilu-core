@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	Cfg    *config.AppCfg
+	Cfg    config.AppCfg
 	Log    *zap.Logger
 	Cache  cache.ICache
 	lock   sync.RWMutex
@@ -143,5 +143,5 @@ func zapInit() (logger *zap.Logger) {
 func initRouter() {
 	//初始化gin
 	r := GetGinEngine()
-	inter.Init(r, Cfg)
+	inter.Init(r, &Cfg)
 }
