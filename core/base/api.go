@@ -22,6 +22,10 @@ func (e *BaseApi) Fail(c *gin.Context, code int, msg string, data ...any) {
 	resMsg(c, code, msg, data...)
 }
 
+func (e *BaseApi) Code(c *gin.Context, code int) {
+	resMsg(c, code, "")
+}
+
 func (e *BaseApi) Err(c *gin.Context, err errs.IError) {
 	errer(c, err)
 }
