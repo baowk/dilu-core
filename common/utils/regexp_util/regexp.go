@@ -7,14 +7,14 @@ import "regexp"
 // [345789]{1} 后接一位345789 的数字
 // \\d \d的转义 表示数字 {9} 接9位
 // $ 结束符
-var phoneRegex = regexp.MustCompile(`^1[345789]{1}\d{9}$`)
+var phoneRegex = regexp.MustCompile(`^1[3456789]{1}\d{9}$`)
 
 // CheckMobile 检验手机号
 func CheckMobile(phone string) bool {
 	return phoneRegex.MatchString(phone)
 }
 
-//18位身份证 ^(\d{17})([0-9]|X)$
+// 18位身份证 ^(\d{17})([0-9]|X)$
 // 匹配规则
 // (^\d{15}$) 15位身份证
 // (^\d{18}$) 18位身份证
@@ -38,14 +38,14 @@ func CheckPwd(pwd string) bool {
 
 var hmRegex = regexp.MustCompile(`^\d{2}:\d{2}$`)
 
-//匹配 HH:ss
+// 匹配 HH:ss
 func CheckHHmm(hs string) bool {
 	return hmRegex.MatchString(hs)
 }
 
 var hmsRegex = regexp.MustCompile(`^\d{2}:\d{2}:\d{2}$`)
 
-//匹配 HH:ss
+// 匹配 HH:ss
 func CheckHHmmss(hs string) bool {
 	return hmsRegex.MatchString(hs)
 }
@@ -53,7 +53,7 @@ func CheckHHmmss(hs string) bool {
 // IPv4 正则表达式
 var ipv4Regex = regexp.MustCompile(`^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`)
 
-//IPv4
+// IPv4
 func CheckIpv4(ip string) bool {
 	return ipv4Regex.MatchString(ip)
 }
@@ -67,7 +67,7 @@ func CheckIpv6(ip string) bool {
 
 var internalIPRegex = regexp.MustCompile(`^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.)(\d{1,3}\.){1,3}\d{1,3}$`)
 
-//内网IP
+// 内网IP
 func CheckInterIp(ip string) bool {
 	return internalIPRegex.MatchString(ip)
 }
