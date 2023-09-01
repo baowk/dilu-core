@@ -55,10 +55,6 @@ func (e *BizError) ReqId() string {
 	return e.reqId
 }
 
-// func (e *BizError) Msg() string {
-// 	return e.msg
-// }
-
 func (e *BizError) Retryable() bool {
 	return e.retryable
 }
@@ -76,6 +72,12 @@ func Err(code int, reqId string, cause error) IError {
 		reqId:  reqId,
 		code:   code,
 		causes: []error{cause},
+	}
+}
+
+func ErrWithCode(code int) IError {
+	return &BizError{
+		code: code,
 	}
 }
 
