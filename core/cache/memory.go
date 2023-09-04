@@ -62,13 +62,17 @@ func (m *Memory) getItem(key string) (*item, error) {
 }
 
 func (m *Memory) Set(key string, val interface{}, expiration time.Duration) error {
-	//s, err := cast.ToStringE(val)
-	bs, err := json.Marshal(val)
+	s, err := cast.ToStringE(val)
 	if err != nil {
-		return err
+		bs, err := json.Marshal(val)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		s = string(bs)
 	}
 	item := &item{
-		Value:   string(bs),
+		Value:   s,
 		Expired: time.Now().Add(expiration),
 	}
 	return m.setItem(key, item)
