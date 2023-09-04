@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -250,4 +252,18 @@ func MaskSensitiveInfo(s string, start int, maskNumber int, maskChars ...string)
 		end = len(s)
 	}
 	return s[:start] + strings.Repeat(maskChar, end-start) + s[end:]
+}
+
+func IntToBytes(n int) []byte {
+	data := int64(n)
+	bytebuf := bytes.NewBuffer([]byte{})
+	binary.Write(bytebuf, binary.BigEndian, data)
+	return bytebuf.Bytes()
+}
+
+func BytesToInt(bys []byte) int {
+	bytebuff := bytes.NewBuffer(bys)
+	var data int64
+	binary.Read(bytebuff, binary.BigEndian, &data)
+	return int(data)
 }
