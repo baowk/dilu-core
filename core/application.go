@@ -93,6 +93,7 @@ func Run(appRs *[]func()) {
 	}()
 	fmt.Println(`Dilu github: https://github.com/baowk/dilu`)
 	fmt.Println("Dilu Server started ,Listen: " + addr)
+	fmt.Println("Dilu Go Go Go ~ ~ ~ ")
 
 	if Cfg.Server.Mode != ModeProd.String() {
 		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
