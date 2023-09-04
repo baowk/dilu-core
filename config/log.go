@@ -41,6 +41,21 @@ func (z *LogCfg) ZapEncodeLevel() zapcore.LevelEncoder {
 	}
 }
 
+func (z *LogCfg) Color() bool {
+	switch {
+	case z.EncodeLevel == "LowercaseLevelEncoder": // 小写编码器(默认)
+		return false
+	case z.EncodeLevel == "LowercaseColorLevelEncoder": // 小写编码器带颜色
+		return true
+	case z.EncodeLevel == "CapitalLevelEncoder": // 大写编码器
+		return false
+	case z.EncodeLevel == "CapitalColorLevelEncoder": // 大写编码器带颜色
+		return true
+	default:
+		return false
+	}
+}
+
 // TransportLevel 根据字符串转化为 zapcore.Level
 func (z *LogCfg) TransportLevel() zapcore.Level {
 	z.Level = strings.ToLower(z.Level)

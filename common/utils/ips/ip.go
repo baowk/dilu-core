@@ -1,4 +1,4 @@
-package utils
+package ips
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/baowk/dilu-core/common/utils/http_util"
+	"github.com/baowk/dilu-core/common/utils/https"
 	"github.com/gin-gonic/gin"
 )
 
@@ -73,7 +73,7 @@ type Street struct {
 
 func GetLocationByIp(secretKey, ip string, location *IPLocationData) error {
 	url := "https://api.ipdatacloud.com/v2/query?ip=" + ip + "&key=" + secretKey
-	client := http_util.HTTPClient{}
+	client := https.HTTPClient{}
 	data, err := client.Get(url)
 	if err != nil {
 		return err

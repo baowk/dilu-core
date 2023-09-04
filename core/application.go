@@ -11,7 +11,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/baowk/dilu-core/common/utils"
+	"github.com/baowk/dilu-core/common/utils/files"
+	"github.com/baowk/dilu-core/common/utils/ips"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
 	"github.com/baowk/dilu-core/core/inter"
@@ -98,7 +99,7 @@ func Run(appRs *[]func()) {
 	if Cfg.Server.Mode != ModeProd.String() {
 		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
 		fmt.Printf("Swagger: http://localhost:%d/swagger/index.html \r\n", Cfg.Server.Port)
-		ip := utils.GetLocalHost()
+		ip := ips.GetLocalHost()
 		if ip != "" {
 			fmt.Printf("Swagger: http://%s:%d/swagger/index.html \r\n", ip, Cfg.Server.Port)
 		}
@@ -127,7 +128,7 @@ func logInit() {
 
 // Zap 获取 zap.Logger
 func zapInit() (logger *zap.Logger) {
-	if ok, _ := utils.PathExists(Cfg.Logger.Director); !ok { // 判断是否有Director文件夹
+	if ok, _ := files.PathExists(Cfg.Logger.Director); !ok { // 判断是否有Director文件夹
 		fmt.Printf("create %v directory\n", Cfg.Logger.Director)
 		_ = os.Mkdir(Cfg.Logger.Director, os.ModePerm)
 	}

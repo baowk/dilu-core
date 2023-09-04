@@ -1,4 +1,4 @@
-package crypto_util
+package cryptos
 
 import (
 	"crypto/rand"
