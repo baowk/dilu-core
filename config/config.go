@@ -1,13 +1,14 @@
 package config
 
 type AppCfg struct {
-	Server  ServerCfg `mapstructure:"server" json:"server" yaml:"server"`
-	Logger  LogCfg    `mapstructure:"logger" json:"logger" yaml:"logger"`
-	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
-	DBCfg   DBCfg     `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"` // 数据库配置
-	Cache   CacheCfg  `mapstructure:"cache" json:"cache" yaml:"cache"` // 缓存
-	Cors    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`
-	Extends Extend    `mapstructure:"extend" json:"extend" yaml:"extend"`
+	Server  ServerCfg `mapstructure:"server" json:"server" yaml:"server"` //服务器配置
+	Logger  LogCfg    `mapstructure:"logger" json:"logger" yaml:"logger"` //log配置
+	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`          //jwt配置
+	DBCfg   DBCfg     `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`    // 数据库配置
+	Cache   CacheCfg  `mapstructure:"cache" json:"cache" yaml:"cache"`    // 缓存
+	Cors    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`       //cors配置
+	Extends Extend    `mapstructure:"extend" json:"extend" yaml:"extend"` //扩展配置
+	Gen     bool      `mapstructure:"gen" json:"gen" yaml:"gen"`          //是否可生成初始化模式
 }
 
 type Extend map[string]any
@@ -45,15 +46,15 @@ func (e *Extend) GetBool(key string) bool {
 }
 
 type ServerCfg struct {
-	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`
-	Host         string `mapstructure:"host" json:"host" yaml:"host"`
-	Name         string `mapstructure:"name" json:"name" yaml:"name"`
-	Port         int    `mapstructure:"port" json:"port" yaml:"port"`
-	ReadTimeout  int    `mapstructure:"read-timeout" json:"read-timeout" yaml:"read-timeout"`
-	WriteTimeout int    `mapstructure:"write-timeout" json:"write-timeout" yaml:"write-timeout"`
-	FSType       string `mapstructure:"fs-type" json:"fs-type" yaml:"fs-type"`
-	I18n         bool   `mapstructure:"i18n" json:"i18n" yaml:"i18n"` //是否开启多语言
-	Lang         string `mapstructure:"lang" json:"lang" yaml:"lang"` //默认语言
+	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`                            //模式
+	Host         string `mapstructure:"host" json:"host" yaml:"host"`                            //启动id
+	Name         string `mapstructure:"name" json:"name" yaml:"name"`                            //appname
+	Port         int    `mapstructure:"port" json:"port" yaml:"port"`                            //端口
+	ReadTimeout  int    `mapstructure:"read-timeout" json:"read-timeout" yaml:"read-timeout"`    //读超时
+	WriteTimeout int    `mapstructure:"write-timeout" json:"write-timeout" yaml:"write-timeout"` //写超时
+	FSType       string `mapstructure:"fs-type" json:"fs-type" yaml:"fs-type"`                   //文件系统
+	I18n         bool   `mapstructure:"i18n" json:"i18n" yaml:"i18n"`                            //是否开启多语言
+	Lang         string `mapstructure:"lang" json:"lang" yaml:"lang"`                            //默认语言
 }
 
 func (e *ServerCfg) GetLang() string {
