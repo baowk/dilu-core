@@ -7,5 +7,5 @@ const (
 )
 
 const (
-	DB_DEF = "master"
+	DB_DEF = "sys"
 )
