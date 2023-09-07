@@ -12,7 +12,7 @@ import (
 )
 
 // 将RSA私钥转换为字符串
-func PrivateKeyToString(privateKey *rsa.PrivateKey) (string, error) {
+func PrivateKeyToPem(privateKey *rsa.PrivateKey) (string, error) {
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyBlock := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -23,7 +23,7 @@ func PrivateKeyToString(privateKey *rsa.PrivateKey) (string, error) {
 }
 
 // 将RSA公钥转换为字符串
-func PublicKeyToString(publicKey *rsa.PublicKey) (string, error) {
+func PublicKeyToPem(publicKey *rsa.PublicKey) (string, error) {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return "", err
@@ -85,11 +85,11 @@ func GenerateRsaKey(len int) (string, string, error) {
 		return "", "", err
 	}
 
-	publicKeyStr, err := PublicKeyToString(&key.PublicKey)
+	publicKeyStr, err := PublicKeyToPem(&key.PublicKey)
 	if err != nil {
 		return "", "", err
 	}
-	privateKeyStr, err := PrivateKeyToString(key)
+	privateKeyStr, err := PrivateKeyToPem(key)
 	if err != nil {
 		return "", "", err
 	}
