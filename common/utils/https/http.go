@@ -28,6 +28,9 @@ func (c *HTTPClient) SetHeaders(headers map[string]string) *HTTPClient {
 }
 
 func (c *HTTPClient) AddHeader(name, val string) *HTTPClient {
+	if (*c).Headers == nil {
+		(*c).Headers = make(map[string]string)
+	}
 	(*c).Headers[name] = val
 	return c
 }

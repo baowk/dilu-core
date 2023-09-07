@@ -140,13 +140,13 @@ func RsaDecrypt(encryptedMsg, priKey []byte) ([]byte, error) {
 }
 
 // RsaSign 私钥加签
-func RSA_Sign(publicKeyPEM string, message []byte) ([]byte, error) {
-	return RsaSign([]byte(publicKeyPEM), message)
+func RSA_Sign(priKey string, message []byte) ([]byte, error) {
+	return RsaSign([]byte(priKey), message)
 }
 
 // RsaSign 私钥加签
-func RsaSign(publicKeyPEM, message []byte) ([]byte, error) {
-	privateKey, _ := ParsePriKey(publicKeyPEM)
+func RsaSign(priKey, message []byte) ([]byte, error) {
+	privateKey, _ := ParsePriKey(priKey)
 	hash := sha256.Sum256(message)
 	return rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hash[:])
 }
