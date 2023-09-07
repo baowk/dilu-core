@@ -11,12 +11,7 @@ import (
 	"fmt"
 )
 
-// // 将RSA私钥转换为字符串
-// func PrivateKeyToPemStr(privateKey *rsa.PrivateKey) string {
-// 	return string(PrivateKeyToPem(privateKey))
-// }
-
-// 将RSA私钥转换为字符串
+// 将RSA私钥转换为byte
 func PrivateKeyToPem(privateKey *rsa.PrivateKey) []byte {
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyBlock := &pem.Block{
@@ -26,16 +21,7 @@ func PrivateKeyToPem(privateKey *rsa.PrivateKey) []byte {
 	return pem.EncodeToMemory(privateKeyBlock)
 }
 
-// 将RSA公钥转换为字符串
-func PublicKeyToPemStr(publicKey *rsa.PublicKey) (string, error) {
-	b, err := PublicKeyToPem(publicKey)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-// 将RSA公钥转换为字符串
+// 将RSA公钥转换为byte
 func PublicKeyToPem(publicKey *rsa.PublicKey) ([]byte, error) {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
@@ -48,6 +34,7 @@ func PublicKeyToPem(publicKey *rsa.PublicKey) ([]byte, error) {
 	return pem.EncodeToMemory(publicKeyBlock), nil
 }
 
+// 将byte转为私钥
 func ParsePriKey(privateKey []byte) (*rsa.PrivateKey, error) {
 	privateKeyBlock, _ := pem.Decode(privateKey)
 	if privateKeyBlock == nil || privateKeyBlock.Type != "RSA PRIVATE KEY" {
@@ -60,7 +47,7 @@ func ParsePriKey(privateKey []byte) (*rsa.PrivateKey, error) {
 	return priKey, nil
 }
 
-// 将字符串转换为RSA公钥
+// 将byte转换为RSA公钥
 func ParsePubKey(publicKey []byte) (*rsa.PublicKey, error) {
 	publicKeyBlock, _ := pem.Decode(publicKey)
 	if publicKeyBlock == nil || publicKeyBlock.Type != "PUBLIC KEY" {
@@ -107,42 +94,49 @@ func GenerateRsaKey(len int) (publicKey []byte, privateKey []byte, err error) {
 	return
 }
 
-// 公钥加密
-func RSA_Encrypt(message []byte, pubKey string) (string, error) {
-	return RsaEncrypt(message, []byte(pubKey))
+func EncodeToString(data []byte) string {
+	return hex.EncodeToString(data)
+}
+
+func DecodeString(message string) ([]byte, error) {
+	return hex.DecodeString(message)
 }
 
 // 公钥加密
-func RsaEncrypt(message []byte, pubKey []byte) (string, error) {
-	publicKey, err := ParsePubKey(pubKey)
+func RSA_Encrypt(message []byte, pubKey string) (string, error) {
+	b, err := RsaEncrypt(message, []byte(pubKey))
 	if err != nil {
 		return "", err
 	}
-	// 使用公钥加密消息
-	encryptedMessage, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, message)
-	if err != nil {
-		panic(err)
-	}
-	return hex.EncodeToString(encryptedMessage), nil
+	return EncodeToString(b), nil
 }
 
-// 私钥解密
-func RsaDecrypt(encryptedMsg string, priKey []byte) ([]byte, error) {
-	privateKey, err := ParsePriKey(priKey)
+// 公钥加密
+func RsaEncrypt(message []byte, pubKey []byte) ([]byte, error) {
+	publicKey, err := ParsePubKey(pubKey)
 	if err != nil {
 		return nil, err
 	}
-	// 使用私钥解密消息
-	cipherText, err := hex.DecodeString(encryptedMsg)
-	if err != nil {
-		return nil, err
-	}
-	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, cipherText)
+	// 使用公钥加密消息
+	return rsa.EncryptPKCS1v15(rand.Reader, publicKey, message)
 }
 
 // 私钥解密
 func RSA_Decrypt(encryptedMsg, priKey string) ([]byte, error) {
-	return RsaDecrypt(encryptedMsg, []byte(priKey))
+	b, err := DecodeString(encryptedMsg)
+	if err != nil {
+		return nil, err
+	}
+	return RsaDecrypt(b, []byte(priKey))
+}
+
+// 私钥解密
+func RsaDecrypt(encryptedMsg, priKey []byte) ([]byte, error) {
+	privateKey, err := ParsePriKey(priKey)
+	if err != nil {
+		return nil, err
+	}
+	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedMsg)
 }
 
 // RsaSign 私钥加签
