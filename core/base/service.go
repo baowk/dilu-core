@@ -1,27 +1,52 @@
 package base
 
+import (
+	"github.com/baowk/dilu-core/core"
+	"github.com/gin-gonic/gin"
+)
+
 type BaseService struct {
+	DbName string
+	C      *gin.Context
 }
 
-// func (*BaseService) ParsePage(page, size int) (limit, offset int) {
-// 	if page < 1 {
-// 		page = 1
-// 	}
-// 	if size < 1 {
-// 		size = 20
-// 	}
-// 	if size > 1000 {
-// 		size = 1000
-// 	}
-// 	limit = size
-// 	offset = (page - 1) * size
-// 	return
-// }
+func (s *BaseService) MakeContext(c *gin.Context) {
+	s.C = c
+}
 
-// func (s *BaseService) LogError(reqId string, err error) {
-// 	core.Log.Error(fmt.Sprintf("REQID:%s", reqId), zap.Error(err))
-// }
+func (s *BaseService) Create(data any) error {
+	return core.Db(s.DbName).Create(data).Error
+}
 
-// func (e *BaseService) LogInfo(reqId string, key string, val any) {
-// 	core.Log.Info(fmt.Sprintf("REQID:%s", reqId), zap.String(key, fmt.Sprintf("%v", val)))
-// }
+func (s *BaseService) Save(data any) error {
+	return core.Db(s.DbName).Save(data).Error
+}
+
+func (s *BaseService) Get(id any, model any) error {
+	return core.Db(s.DbName).First(model, id).Error
+}
+
+func (s *BaseService) DelWhere(where any) error {
+	return core.Db(s.DbName).Delete(where).Error
+}
+
+func (s *BaseService) DelIds(model any, ids any) error {
+	return core.Db(s.DbName).Delete(model, ids).Error
+}
+
+func (s *BaseService) Page(where any, data any, total *int64, reqPage ReqPage) error {
+	return core.Db(s.DbName).Where(where).Limit(reqPage.GetSize()).Offset(reqPage.GetOffset()).
+		Find(data).Limit(-1).Offset(-1).Count(total).Error
+}
+
+func (s *BaseService) UpdateWhere(where any, updates map[string]any) error {
+	return core.Db(s.DbName).Where(where).Updates(updates).Error
+}
+
+func (s *BaseService) UpdateWhereModel(where any, updates any) error {
+	return core.Db(s.DbName).Where(where).Updates(updates).Error
+}
+
+func (s *BaseService) GetByWhere(where any, model any) error {
+	return core.Db(s.DbName).Where(where).Find(model).Error
+}
