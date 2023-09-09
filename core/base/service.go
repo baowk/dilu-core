@@ -2,21 +2,15 @@ package base
 
 import (
 	"github.com/baowk/dilu-core/core"
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 type BaseService struct {
 	DbName string
-	C      *gin.Context
 }
 
 func (s *BaseService) DB() *gorm.DB {
 	return core.Db(s.DbName)
-}
-
-func (s *BaseService) MakeContext(c *gin.Context) {
-	s.C = c
 }
 
 // 创建 结构体model
