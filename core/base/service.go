@@ -34,8 +34,8 @@ func (s *BaseService) DelIds(model any, ids any) error {
 	return core.Db(s.DbName).Delete(model, ids).Error
 }
 
-func (s *BaseService) Page(where any, data any, total *int64, reqPage ReqPage) error {
-	return core.Db(s.DbName).Where(where).Limit(reqPage.GetSize()).Offset(reqPage.GetOffset()).
+func (s *BaseService) Page(where any, data any, total *int64, limit, offset int) error {
+	return core.Db(s.DbName).Where(where).Limit(limit).Offset(offset).
 		Find(data).Limit(-1).Offset(-1).Count(total).Error
 }
 
