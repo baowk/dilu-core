@@ -5,6 +5,12 @@ import (
 	"gorm.io/gorm"
 )
 
+func NewService(dbname string) *BaseService {
+	return &BaseService{
+		DbName: dbname,
+	}
+}
+
 type BaseService struct {
 	DbName string
 }
