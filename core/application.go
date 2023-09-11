@@ -13,6 +13,7 @@ import (
 
 	"github.com/baowk/dilu-core/common/utils/files"
 	"github.com/baowk/dilu-core/common/utils/ips"
+	"github.com/baowk/dilu-core/common/utils/text"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
 	"github.com/baowk/dilu-core/core/inter"
@@ -92,9 +93,9 @@ func Run(appRs *[]func()) {
 			log.Fatal("listen: ", err)
 		}
 	}()
-	fmt.Println(`Dilu github: https://github.com/baowk/dilu`)
-	fmt.Println("Dilu Server started ,Listen: " + addr)
-	fmt.Println("Dilu Go Go Go ~ ~ ~ ")
+	fmt.Println(text.Green(`Dilu github: https://github.com/baowk/dilu`))
+	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red(addr))
+	fmt.Println(text.Blue("Dilu Go Go Go ~ ~ ~ "))
 
 	if Cfg.Server.Mode != ModeProd.String() {
 		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
