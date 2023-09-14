@@ -85,8 +85,8 @@ func Run() {
 			log.Fatal("listen: ", err)
 		}
 	}()
-	fmt.Println(text.Green(`Dilu github: https://github.com/baowk/dilu`))
-	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red(addr))
+	fmt.Println(text.Green(`Dilu github:`) + text.Blue(`https://github.com/baowk/dilu`))
+	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red("[ "+addr+" ]"))
 	fmt.Println(text.Yellow("Dilu Go Go Go ~ ~ ~ "))
 
 	if Cfg.Server.Mode != ModeProd.String() {
