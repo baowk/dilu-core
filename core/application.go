@@ -63,7 +63,7 @@ func Init() {
 	dbInit()
 }
 
-func Run(appRs *[]func()) {
+func Run() {
 	if Cfg.Server.Mode == ModeProd.String() {
 		gin.SetMode(gin.ReleaseMode)
 	}
