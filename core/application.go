@@ -87,14 +87,14 @@ func Run() {
 	}()
 	fmt.Println(text.Green(`Dilu github: https://github.com/baowk/dilu`))
 	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red(addr))
-	fmt.Println(text.Blue("Dilu Go Go Go ~ ~ ~ "))
+	fmt.Println(text.Yellow("Dilu Go Go Go ~ ~ ~ "))
 
 	if Cfg.Server.Mode != ModeProd.String() {
 		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
-		fmt.Printf("Swagger: http://localhost:%d/swagger/index.html \r\n", Cfg.Server.Port)
+		fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://localhost:%d/swagger/index.html", Cfg.Server.Port)))
 		ip := ips.GetLocalHost()
 		if ip != "" {
-			fmt.Printf("Swagger: http://%s:%d/swagger/index.html \r\n", ip, Cfg.Server.Port)
+			fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://%s:%d/swagger/index.html", ip, Cfg.Server.Port)))
 		}
 	}
 
