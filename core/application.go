@@ -16,7 +16,6 @@ import (
 	"github.com/baowk/dilu-core/common/utils/text"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
-	"github.com/baowk/dilu-core/core/inter"
 	"github.com/gin-gonic/gin"
 
 	"go.uber.org/zap"
@@ -67,13 +66,6 @@ func Init() {
 func Run(appRs *[]func()) {
 	if Cfg.Server.Mode == ModeProd.String() {
 		gin.SetMode(gin.ReleaseMode)
-	}
-
-	initRouter()
-
-	//初始化路由
-	for _, f := range *appRs {
-		f()
 	}
 
 	addr := fmt.Sprintf("%s:%d", Cfg.Server.GetHost(), Cfg.Server.GetPort())
@@ -141,10 +133,4 @@ func zapInit() (logger *zap.Logger) {
 		logger = logger.WithOptions(zap.AddCaller())
 	}
 	return logger
-}
-
-func initRouter() {
-	//初始化gin
-	r := GetGinEngine()
-	inter.Init(r, &Cfg)
 }
