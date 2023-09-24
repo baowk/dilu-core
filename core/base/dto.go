@@ -17,8 +17,8 @@ type ReqIds struct {
 }
 
 type ReqPage struct {
-	Page int `json:"page" form:"page"` // 页码
-	Size int `json:"size" form:"size"` // 每页大小
+	Page     int `json:"page" form:"page"`         // 页码
+	PageSize int `json:"pageSize" form:"pageSize"` // 每页大小
 	//	Keyword string `json:"keyword" form:"keyword"` //关键字
 }
 
@@ -30,10 +30,10 @@ func (e *ReqPage) GetPage() int {
 }
 
 func (e *ReqPage) GetSize() int {
-	if e.Size < 1 {
+	if e.PageSize < 1 {
 		return 10
 	}
-	return e.Size
+	return e.PageSize
 }
 
 func (e *ReqPage) GetOffset() int {
