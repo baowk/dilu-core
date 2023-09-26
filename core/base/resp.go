@@ -22,10 +22,10 @@ type Resp struct {
 }
 
 type PageResp struct {
-	List        any   `json:"list"`        //数据列表
-	Total       int64 `json:"total"`       //总条数
-	PageSize    int   `json:"pageSize"`    //分页大小
-	CurrentPage int   `json:"currentPage"` //当前第几页
+	List  any   `json:"list"`  //数据列表
+	Total int64 `json:"total"` //总条数
+	Size  int   `json:"size"`  //分页大小
+	Page  int   `json:"page"`  //当前第几页
 }
 
 type Option func(resp *Resp)
@@ -107,10 +107,10 @@ func resMsg(c *gin.Context, code int, msg string, data ...any) {
 
 func pageResp(c *gin.Context, list any, total int64, page int, pageSize int) {
 	p := PageResp{
-		CurrentPage: page,
-		Total:       total,
-		PageSize:    pageSize,
-		List:        list,
+		Page:  page,
+		Total: total,
+		Size:  pageSize,
+		List:  list,
 	}
 	resMsg(c, http.StatusOK, "OK", p)
 }
