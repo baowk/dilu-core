@@ -69,3 +69,8 @@ func (s *BaseService) UpdateWhereModel(where any, updates any) error {
 func (s *BaseService) GetByWhere(where any, model any) error {
 	return s.DB().Where(where).Find(model).Error
 }
+
+// 条件查询 model为数组
+func (s *BaseService) GetByMap(where map[string]any, model any) error {
+	return s.DB().Where(where).Find(model).Error
+}
