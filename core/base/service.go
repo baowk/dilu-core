@@ -2,6 +2,7 @@ package base
 
 import (
 	"github.com/baowk/dilu-core/core"
+	"github.com/baowk/dilu-core/core/cache"
 	"gorm.io/gorm"
 )
 
@@ -15,8 +16,14 @@ type BaseService struct {
 	DbName string
 }
 
+// 数据库
 func (s *BaseService) DB() *gorm.DB {
 	return core.Db(s.DbName)
+}
+
+// 缓存
+func (s *BaseService) Cache() cache.ICache {
+	return core.Cache
 }
 
 // 创建 结构体model
@@ -74,3 +81,7 @@ func (s *BaseService) GetByWhere(where any, model any) error {
 func (s *BaseService) GetByMap(where map[string]any, model any) error {
 	return s.DB().Where(where).Find(model).Error
 }
+
+// func (s *BaseService) Query(where any, models any) error {
+
+// }
