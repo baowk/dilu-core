@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/baowk/dilu-core/common/consts"
 	"gorm.io/gorm/logger"
 )
 
@@ -32,6 +33,26 @@ type DBCfg struct {
 	SlowThreshold  int           `mapstructure:"slow-threshold" json:"slow-threshold" yaml:"slow-threshold"`       // 慢查询 毫秒 大于0有效
 	IgnoreNotFound bool          `mapstructure:"ignore-not-found" json:"ignore-not-found" yaml:"ignore-not-found"` //忽略无记录错误
 	DBS            map[string]DB `mapstructure:"dbs" json:"dbs" yaml:"dbs"`                                        //配置多db
+}
+
+func (c *DBCfg) GetDriver(dbname string) string {
+	if dbname == consts.DB_DEF {
+		return c.Driver
+	}
+	if db, ok := c.DBS[dbname]; ok {
+		return db.Driver
+	}
+	return ""
+}
+
+func (c *DBCfg) GetDSN(dbname string) string {
+	if dbname == consts.DB_DEF {
+		return c.DSN
+	}
+	if db, ok := c.DBS[dbname]; ok {
+		return db.DSN
+	}
+	return ""
 }
 
 func GetLogMode(logmode string) logger.LogLevel {
