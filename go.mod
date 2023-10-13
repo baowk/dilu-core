@@ -3,7 +3,6 @@ module github.com/baowk/dilu-core
 go 1.20
 
 require (
-	github.com/acmestack/gorm-plus v0.1.5
 	github.com/bsm/redislock v0.9.4
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.0
