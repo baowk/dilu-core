@@ -16,6 +16,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
+
+	"github.com/acmestack/gorm-plus/gplus"
 )
 
 func dbInit() {
@@ -126,10 +128,19 @@ func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, si
 	return config
 }
 
+var (
+	gplusInit = true
+)
+
 func SetDb(key string, db *gorm.DB) {
 	lock.Lock()
 	defer lock.Unlock()
 	dbs[key] = db
+	//集成gplus
+	if gplusInit {
+		gplusInit = false
+		gplus.Init(db)
+	}
 }
 
 // GetDb 获取所有map里的db数据
