@@ -87,6 +87,41 @@ func (s *BaseService) GetByMap(where map[string]any, model any) error {
 	return s.DB().Where(where).Find(model).Error
 }
 
-// func (s *BaseService) Query(where any, models any) error {
+func (s *BaseService) Query(where Query, models any) error {
+	return s.DB().Scopes(s.MakeCondition(where)).Find(models).Error
+}
 
-// }
+func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		condition := &GormCondition{
+			GormPublic: GormPublic{},
+			Join:       make([]*GormJoin, 0),
+		}
+		ResolveSearchQuery(core.Cfg.DBCfg.GetDriver(s.DbName), q, condition)
+		for _, join := range condition.Join {
+			if join == nil {
+				continue
+			}
+			db = db.Joins(join.JoinOn)
+			for k, v := range join.Where {
+				db = db.Where(k, v...)
+			}
+			for k, v := range join.Or {
+				db = db.Or(k, v...)
+			}
+			for _, o := range join.Order {
+				db = db.Order(o)
+			}
+		}
+		for k, v := range condition.Where {
+			db = db.Where(k, v...)
+		}
+		for k, v := range condition.Or {
+			db = db.Or(k, v...)
+		}
+		for _, o := range condition.Order {
+			db = db.Order(o)
+		}
+		return db
+	}
+}

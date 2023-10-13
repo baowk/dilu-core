@@ -89,6 +89,9 @@ func Deduplicate(array []any) []any {
 	return result
 }
 
+/**
+ *	字符串素组去重
+ */
 func DeduplicateString(array []string) []string {
 	encountered := make(map[string]bool)
 	result := []string{}
@@ -254,6 +257,9 @@ func MaskSensitiveInfo(s string, start int, maskNumber int, maskChars ...string)
 	return s[:start] + strings.Repeat(maskChar, end-start) + s[end:]
 }
 
+/**
+ * int转比特数组
+ */
 func IntToBytes(n int) []byte {
 	data := int64(n)
 	bytebuf := bytes.NewBuffer([]byte{})
@@ -261,9 +267,81 @@ func IntToBytes(n int) []byte {
 	return bytebuf.Bytes()
 }
 
+/**
+ * 比特数组转int
+ */
 func BytesToInt(bys []byte) int {
 	bytebuff := bytes.NewBuffer(bys)
 	var data int64
 	binary.Read(bytebuff, binary.BigEndian, &data)
 	return int(data)
+}
+
+/**
+ * 驼峰转蛇形 snake string
+ * @description XxYy to xx_yy , XxYY to xx_y_y
+ * @date 2023/10/13
+ * @param s 需要转换的字符串
+ * @param allMode true XxYY to xx_y_y false XxYY to xx_yy
+ * @return string
+ **/
+func SnakeCase(s string, allMode bool) string {
+	num := len(s)
+	data := make([]byte, 0, num*2)
+	for i := 0; i < num; i++ {
+		d := s[i]
+		// or通过ASCII码进行大小写的转化
+		// 65-90（A-Z），97-122（a-z）
+		//判断如果字母为大写的A-Z就在前面拼接一个_
+		if d >= 'A' && d <= 'Z' {
+			if i > 0 {
+				if allMode {
+					data = append(data, '_', d+32)
+				} else {
+					if s[i-1] >= 'A' && s[i-1] <= 'Z' {
+						data = append(data, d+32)
+					} else {
+						data = append(data, '_', d+32)
+					}
+				}
+			} else {
+				data = append(data, d+32)
+			}
+		} else {
+			data = append(data, d)
+		}
+	}
+	//ToLower把大写字母统一转小写
+	return string(data[:])
+}
+
+/**
+ * 蛇形转驼峰
+ * @description xx_yy to XxYx  xx_y_y to XxYY
+ * @date 2023/10/13
+ * @param s要转换的字符串
+ * @return string
+ **/
+func CamelCase(s string) string {
+	data := make([]byte, 0, len(s))
+	j := false
+	k := false
+	num := len(s) - 1
+	for i := 0; i <= num; i++ {
+		d := s[i]
+		if !k && d >= 'A' && d <= 'Z' {
+			k = true
+		}
+		if d >= 'a' && d <= 'z' && (j || !k) {
+			d = d - 32
+			j = false
+			k = true
+		}
+		if k && d == '_' && num > i && s[i+1] >= 'a' && s[i+1] <= 'z' {
+			j = true
+			continue
+		}
+		data = append(data, d)
+	}
+	return string(data[:])
 }
