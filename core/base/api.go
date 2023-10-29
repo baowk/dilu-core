@@ -34,6 +34,10 @@ func (e *BaseApi) Ok(c *gin.Context, data ...any) {
 	ok(c, data...)
 }
 
+func (e *BaseApi) PureOk(c *gin.Context, data any) {
+	pureJSON(c, data)
+}
+
 func (e *BaseApi) ResCustom(c *gin.Context, opts ...Option) {
 	result(c, opts...)
 }

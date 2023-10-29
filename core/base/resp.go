@@ -70,6 +70,15 @@ func result(c *gin.Context, opts ...Option) {
 	c.AbortWithStatusJSON(http.StatusOK, *r)
 }
 
+func pureJSON(c *gin.Context, data any) {
+	c.PureJSON(http.StatusOK, Resp{
+		ReqId: c.GetString(consts.REQ_ID),
+		Code:  200,
+		Msg:   "OK",
+		Data:  data,
+	})
+}
+
 func ok(c *gin.Context, data ...any) {
 	resMsg(c, http.StatusOK, "OK", data...)
 }
