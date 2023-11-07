@@ -8,7 +8,7 @@ type AppCfg struct {
 	Cache   CacheCfg  `mapstructure:"cache" json:"cache" yaml:"cache"`    // 缓存
 	Cors    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`       //cors配置
 	Extends any       `mapstructure:"extend" json:"extend" yaml:"extend"` //扩展配置
-	Gen     bool      `mapstructure:"gen" json:"gen" yaml:"gen"`          //是否可生成初始化模式
+	Gen     GenCfg    `mapstructure:"gen" json:"gen" yaml:"gen"`          //是否可生成
 }
 
 // type Extend map[string]any
