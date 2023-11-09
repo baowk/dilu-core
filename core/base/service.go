@@ -91,6 +91,22 @@ func (s *BaseService) Query(where Query, models any) error {
 	return s.DB().Scopes(s.MakeCondition(where)).Find(models).Error
 }
 
+// 分页获取
+func (s *BaseService) QueryPage(where Query, models any, total *int64, limit, offset int) error {
+	return s.DB().Scopes(s.MakeCondition(where)).Limit(limit).Offset(offset).
+		Find(models).Limit(-1).Offset(-1).Count(total).Error
+}
+
+func (s *BaseService) Paginate(pageSize, pageIndex int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		offset := (pageIndex - 1) * pageSize
+		if offset < 0 {
+			offset = 0
+		}
+		return db.Offset(offset).Limit(pageSize)
+	}
+}
+
 func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		condition := &GormCondition{
