@@ -196,6 +196,7 @@ func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue refle
 
 func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue reflect.Value, i int, tname string) {
 	if t.Type == "" {
+		fmt.Println("null")
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
 		return
 	}
@@ -234,8 +235,10 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 		}
 		break
 	case ORDER:
+		fmt.Println("order")
 		switch strings.ToLower(qValue.Field(i).String()) {
 		case "desc", "asc":
+			fmt.Println(fmt.Sprintf("`%s`.`%s` %s", t.Table, t.Column, qValue.Field(i).String()))
 			condition.SetOrder(fmt.Sprintf("`%s`.`%s` %s", t.Table, t.Column, qValue.Field(i).String()))
 		}
 		break
