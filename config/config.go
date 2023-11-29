@@ -2,6 +2,7 @@ package config
 
 type AppCfg struct {
 	Server  ServerCfg `mapstructure:"server" json:"server" yaml:"server"` //服务器配置
+	Remote  RemoteCfg `mapstructure:"remote" json:"remote" yaml:"remote"` //远程配置
 	Logger  LogCfg    `mapstructure:"logger" json:"logger" yaml:"logger"` //log配置
 	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`          //jwt配置
 	DBCfg   DBCfg     `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`    // 数据库配置
@@ -10,40 +11,6 @@ type AppCfg struct {
 	Extends any       `mapstructure:"extend" json:"extend" yaml:"extend"` //扩展配置
 	Gen     GenCfg    `mapstructure:"gen" json:"gen" yaml:"gen"`          //是否可生成
 }
-
-// type Extend map[string]any
-
-// func (e *Extend) Get(key string) any {
-// 	return (*e)[key]
-// }
-
-// func (e *Extend) GetString(key string) string {
-// 	if strVal, ok := (*e)[key].(string); ok {
-// 		return strVal
-// 	}
-// 	return ""
-// }
-
-// func (e *Extend) GetInt(key string) int {
-// 	if strVal, ok := (*e)[key].(int); ok {
-// 		return strVal
-// 	}
-// 	return 0
-// }
-
-// func (e *Extend) GetFloat(key string) float64 {
-// 	if strVal, ok := (*e)[key].(float64); ok {
-// 		return strVal
-// 	}
-// 	return 0
-// }
-
-// func (e *Extend) GetBool(key string) bool {
-// 	if strVal, ok := (*e)[key].(bool); ok {
-// 		return strVal
-// 	}
-// 	return false
-// }
 
 type ServerCfg struct {
 	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`                            //模式
@@ -55,6 +22,13 @@ type ServerCfg struct {
 	FSType       string `mapstructure:"fs-type" json:"fs-type" yaml:"fs-type"`                   //文件系统
 	I18n         bool   `mapstructure:"i18n" json:"i18n" yaml:"i18n"`                            //是否开启多语言
 	Lang         string `mapstructure:"lang" json:"lang" yaml:"lang"`                            //默认语言
+}
+
+type RemoteCfg struct {
+	Provider      string `mapstructure:"provider" json:"provider" yaml:"provider"`                   //提供方
+	Endpoint      string `mapstructure:"endpoint" json:"endpoint" yaml:"endpoint"`                   //端点
+	Path          string `mapstructure:"path" json:"path" yaml:"path"`                               //路径
+	SecretKeyring string `mapstructure:"secret-keyring" json:"secret-keyring" yaml:"secret-keyring"` //安全
 }
 
 func (e *ServerCfg) GetLang() string {
