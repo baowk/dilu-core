@@ -137,58 +137,58 @@ func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue refle
 	switch qtag {
 	case EQ:
 		condition.SetWhere(fmt.Sprintf("%s.%s = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case ILIKE:
 		condition.SetWhere(fmt.Sprintf("%s.%s ilike ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String() + "%"})
-		break
+		return
 	case LIKE:
 		condition.SetWhere(fmt.Sprintf("%s.%s like ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String() + "%"})
-		break
+		return
 	case GT:
 		condition.SetWhere(fmt.Sprintf("%s.%s > ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case GTE:
 		condition.SetWhere(fmt.Sprintf("%s.%s >= ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case LT:
 		condition.SetWhere(fmt.Sprintf("%s.%s < ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case LTE:
 		condition.SetWhere(fmt.Sprintf("%s.%s <= ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case ILEFT:
 		condition.SetWhere(fmt.Sprintf("%s.%s ilike ?", t.Table, t.Column), []interface{}{qValue.Field(i).String() + "%"})
-		break
+		return
 	case LEFT:
 		condition.SetWhere(fmt.Sprintf("%s.%s like ?", t.Table, t.Column), []interface{}{qValue.Field(i).String() + "%"})
-		break
+		return
 	case IRIGHT:
 		condition.SetWhere(fmt.Sprintf("%s.%s ilike ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String()})
-		break
+		return
 	case RIGHT:
 		condition.SetWhere(fmt.Sprintf("%s.%s like ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String()})
-		break
+		return
 	case IN:
 		condition.SetWhere(fmt.Sprintf("%s.%s in (?)", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case ISNULL:
 		if !(qValue.Field(i).IsZero() && qValue.Field(i).IsNil()) {
 			condition.SetWhere(fmt.Sprintf("%s.%s isnull", t.Table, t.Column), make([]interface{}, 0))
 		}
-		break
+		return
 	case ORDER:
 		switch strings.ToLower(qValue.Field(i).String()) {
 		case "desc", "asc":
 			condition.SetOrder(fmt.Sprintf("%s.%s %s", t.Table, t.Column, qValue.Field(i).String()))
 		}
-		break
+		return
 	case JOIN:
 		//左关联
 		join := condition.SetJoinOn(t.Type, fmt.Sprintf(
 			"left join %s on %s.%s = %s.%s", t.Join, t.Join, t.On[0], t.Table, t.On[1],
 		))
 		ResolveSearchQuery(driver, qValue.Field(i).Interface(), join, tname)
-		break
+		return
 	default:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
 	}
@@ -203,42 +203,42 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 	switch qtag {
 	case EQ:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case GT:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` > ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case GTE:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` >= ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case LT:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` < ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case LTE:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` <= ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case LEFT:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` like ?", t.Table, t.Column), []interface{}{qValue.Field(i).String() + "%"})
-		break
+		return
 	case LIKE:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` like ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String() + "%"})
-		break
+		return
 	case RIGHT:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` like ?", t.Table, t.Column), []interface{}{"%" + qValue.Field(i).String()})
-		break
+		return
 	case IN:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` in (?)", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
-		break
+		return
 	case ISNULL:
 		if !(qValue.Field(i).IsZero() && qValue.Field(i).IsNil()) {
 			condition.SetWhere(fmt.Sprintf("`%s`.`%s` isnull", t.Table, t.Column), make([]interface{}, 0))
 		}
-		break
+		return
 	case ORDER:
 		switch strings.ToLower(qValue.Field(i).String()) {
 		case "desc", "asc":
 			condition.SetOrder(fmt.Sprintf("`%s`.`%s` %s", t.Table, t.Column, qValue.Field(i).String()))
 		}
-		break
+		return
 	case JOIN:
 		//左关联
 		join := condition.SetJoinOn(t.Type, fmt.Sprintf(
@@ -250,7 +250,7 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 			t.On[1],
 		))
 		ResolveSearchQuery(driver, qValue.Field(i).Interface(), join, tname)
-		break
+		return
 	default:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
 	}

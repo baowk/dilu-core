@@ -58,39 +58,22 @@ func TestResolveSearchQuery(t *testing.T) {
 	}
 }
 
-type SysCfgGetPageReq struct {
-	ReqPage `query:"-"`
-	SysCfgQuery
+type SysOperaLogGetPageReq struct {
+	ReqPage   `query:"-"`
+	SortOrder string `json:"-" query:"column:id;type:order;"`
+	Status    int    `json:"status" query:"column:status"` //操作状态 1:成功 2:失败
+
 }
 
-type SysCfgQuery struct {
-	Id        int    `json:"id" query:""`
-	Name      string `json:"name" query:"type:like;"`
-	Status    int    `json:"status" query:"type:gt"`
-	DeptPath  string `json:"deptPath" query:"type:left;"`
-	File      string `json:"file" query:"type:right;"`
-	Flag      int    `json:"flag" query:"type:gt"`
-	Uid       []int  `json:"uid" query:"type:in"`
-	SortOrder string `json:"-" query:"type:order;column:id"` //Status
-}
-
-// func (SysCfgQuery) TableName() string {
-// 	return "sys_cfg"
-// }
-
-func (SysCfgGetPageReq) TableName() string {
-	return "sys_cfg"
+func (SysOperaLogGetPageReq) TableName() string {
+	return "sys_operalog"
 }
 
 func TestResolveSearchQuery2(t *testing.T) {
-	tp := SysCfgGetPageReq{}
+	tp := SysOperaLogGetPageReq{}
 	tp.Status = 1
 	tp.SortOrder = "desc"
-	tp.Id = 1
-	tp.Name = "abc"
-	tp.DeptPath = "/a/b/"
-	tp.File = ".png"
-	tp.Uid = []int{1, 2}
+
 	condition := &GormCondition{
 		GormPublic: GormPublic{},
 		Join:       make([]*GormJoin, 0),
