@@ -13,9 +13,10 @@ type AppCfg struct {
 }
 
 type ServerCfg struct {
-	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`                            //模式
-	Host         string `mapstructure:"host" json:"host" yaml:"host"`                            //启动id
 	Name         string `mapstructure:"name" json:"name" yaml:"name"`                            //appname
+	RemoteEnable bool   `mapstructure:"remote-enable" json:"remote-enable" yaml:"remote-enable"` //是否开启远程配置
+	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`                            //模式
+	Host         string `mapstructure:"host" json:"host" yaml:"host"`                            //启动host
 	Port         int    `mapstructure:"port" json:"port" yaml:"port"`                            //端口
 	ReadTimeout  int    `mapstructure:"read-timeout" json:"read-timeout" yaml:"read-timeout"`    //读超时
 	WriteTimeout int    `mapstructure:"write-timeout" json:"write-timeout" yaml:"write-timeout"` //写超时
