@@ -16,6 +16,7 @@ import (
 	"github.com/baowk/dilu-core/common/utils/text"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
+	"github.com/baowk/dilu-core/core/locker"
 	"github.com/gin-gonic/gin"
 
 	"go.uber.org/zap"
@@ -24,12 +25,13 @@ import (
 )
 
 var (
-	Cfg    config.AppCfg
-	Log    *zap.Logger
-	Cache  cache.ICache
-	lock   sync.RWMutex
-	engine http.Handler
-	dbs    = make(map[string]*gorm.DB, 0)
+	Cfg       config.AppCfg
+	Log       *zap.Logger
+	Cache     cache.ICache
+	lock      sync.RWMutex
+	engine    http.Handler
+	dbs       = make(map[string]*gorm.DB, 0)
+	RedisLock *locker.Redis
 )
 
 func GetEngine() http.Handler {
@@ -60,6 +62,10 @@ func GetGinEngine() *gin.Engine {
 func Init() {
 	logInit()
 	Cache = cache.New(Cfg.Cache)
+	if Cache.Type() == "redis" {
+		r := Cache.(*cache.RedisCache)
+		RedisLock = locker.NewRedis(r.GetClient())
+	}
 	dbInit()
 }
 

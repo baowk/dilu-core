@@ -2,6 +2,7 @@ package locker
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -26,6 +27,9 @@ func (Redis) String() string {
 }
 
 func (r *Redis) Lock(key string, ttl int64, options *redislock.Options) (*redislock.Lock, error) {
+	if r.client == nil {
+		return nil, errors.New("redis client is nil")
+	}
 	if r.mutex == nil {
 		r.mutex = redislock.New(r.client)
 	}

@@ -148,3 +148,7 @@ func (m *Memory) Expire(key string, dur time.Duration) error {
 	item.Expired = time.Now().Add(dur)
 	return m.setItem(key, item)
 }
+
+func (m *Memory) GetClient() *Memory {
+	return m
+}
