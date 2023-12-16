@@ -9,7 +9,7 @@ type CacheCfg struct {
 
 func (c *CacheCfg) GetType() string {
 	if c.Type == "" {
-		return "redis"
+		return "memory"
 	}
 	return c.Type
 }
