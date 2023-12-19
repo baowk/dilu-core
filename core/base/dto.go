@@ -13,7 +13,7 @@ type ReqStrId struct {
 }
 
 type ReqIds struct {
-	Ids []int `json:"ids" form:"ids"` //多id
+	Ids []int `json:"ids" form:"ids[]"` //多id
 }
 
 type ReqPage struct {
