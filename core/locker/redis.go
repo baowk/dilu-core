@@ -26,12 +26,12 @@ func (Redis) String() string {
 	return "redis"
 }
 
-func (r *Redis) Lock(key string, ttl int64, options *redislock.Options) (*redislock.Lock, error) {
+func (r *Redis) Lock(key string, ttl time.Duration, options *redislock.Options) (*redislock.Lock, error) {
 	if r.client == nil {
 		return nil, errors.New("redis client is nil")
 	}
 	if r.mutex == nil {
 		r.mutex = redislock.New(r.client)
 	}
-	return r.mutex.Obtain(context.TODO(), key, time.Duration(ttl)*time.Second, options)
+	return r.mutex.Obtain(context.TODO(), key, ttl, options)
 }
