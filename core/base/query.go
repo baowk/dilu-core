@@ -44,7 +44,7 @@ const (
 	// Mysql 数据库标识
 	Mysql = "mysql"
 	// Postgres 数据库标识
-	Postgres = "postgres"
+	Postgres = "pgsql"
 )
 
 // ResolveSearchQuery 解析
@@ -130,7 +130,7 @@ const (
 
 func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue reflect.Value, i int, tname string) {
 	if t.Type == "" {
-		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
+		condition.SetWhere(fmt.Sprintf("%s.%s = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
 		return
 	}
 	qtag := QueryTag(t.Type)
@@ -190,7 +190,7 @@ func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue refle
 		ResolveSearchQuery(driver, qValue.Field(i).Interface(), join, tname)
 		return
 	default:
-		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
+		condition.SetWhere(fmt.Sprintf("%s.%s = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
 	}
 }
 
