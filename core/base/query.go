@@ -44,7 +44,7 @@ const (
 	// Mysql 数据库标识
 	Mysql = "mysql"
 	// Postgres 数据库标识
-	Postgres = "postgres"
+	Postgres = "pgsql"
 )
 
 // ResolveSearchQuery 解析
