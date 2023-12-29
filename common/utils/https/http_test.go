@@ -10,5 +10,5 @@ func TestAddHeader(t *testing.T) {
 	if err != nil {
 		t.Errorf("Req err %v", err)
 	}
-	fmt.Println(res)
+	fmt.Println(string(res))
 }

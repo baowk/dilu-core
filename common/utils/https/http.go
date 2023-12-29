@@ -84,7 +84,7 @@ func (c *HTTPClient) Post(endpoint string, data []byte) ([]byte, error) {
 
 func do(req *http.Request) ([]byte, error) {
 	client := &http.Client{}
-	//fmt.Printf("%s : %s ", req.Method, req.URL)
+	defer client.CloseIdleConnections()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
