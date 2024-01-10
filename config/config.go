@@ -1,15 +1,16 @@
 package config
 
 type AppCfg struct {
-	Server  ServerCfg `mapstructure:"server" json:"server" yaml:"server"` //服务器配置
-	Remote  RemoteCfg `mapstructure:"remote" json:"remote" yaml:"remote"` //远程配置
-	Logger  LogCfg    `mapstructure:"logger" json:"logger" yaml:"logger"` //log配置
-	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`          //jwt配置
-	DBCfg   DBCfg     `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`    // 数据库配置
-	Cache   CacheCfg  `mapstructure:"cache" json:"cache" yaml:"cache"`    // 缓存
-	Cors    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`       //cors配置
-	Extends any       `mapstructure:"extend" json:"extend" yaml:"extend"` //扩展配置
-	Gen     GenCfg    `mapstructure:"gen" json:"gen" yaml:"gen"`          //是否可生成
+	Server  ServerCfg `mapstructure:"server" json:"server" yaml:"server"`    //服务器配置
+	Remote  RemoteCfg `mapstructure:"remote" json:"remote" yaml:"remote"`    //远程配置
+	Logger  LogCfg    `mapstructure:"logger" json:"logger" yaml:"logger"`    //log配置
+	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`             //jwt配置
+	DBCfg   DBCfg     `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`       // 数据库配置
+	Cache   CacheCfg  `mapstructure:"cache" json:"cache" yaml:"cache"`       // 缓存
+	Cors    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`          //cors配置
+	Extends any       `mapstructure:"extend" json:"extend" yaml:"extend"`    //扩展配置
+	Gen     GenCfg    `mapstructure:"gen" json:"gen" yaml:"gen"`             //是否可生成
+	Mongodb Mongodb   `mapstructure:"mongodb" json:"mongodb" yaml:"mongodb"` //mongo配置
 }
 
 type ServerCfg struct {
