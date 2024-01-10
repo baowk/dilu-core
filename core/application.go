@@ -68,7 +68,10 @@ func Init() {
 		RedisLock = locker.NewRedis(r.GetClient())
 	}
 	dbInit()
-	mongodb.MongoInit(Cfg.Mongodb)
+	// 判断是否启用mongo
+	if Cfg.Mongodb.Open {
+		mongodb.MongoInit(Cfg.Mongodb)
+	}
 }
 
 func Run() {
