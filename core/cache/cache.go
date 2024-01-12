@@ -35,7 +35,8 @@ func New(conf config.CacheCfg) ICache {
 		} else {
 			fmt.Println("redis connect ping response:", zap.String("pong", pong))
 			r := RedisCache{
-				redis: rdb,
+				redis:  rdb,
+				prefix: conf.Prefix,
 			}
 			return &r
 		}
