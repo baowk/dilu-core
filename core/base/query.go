@@ -75,6 +75,13 @@ func ResolveSearchQuery(driver string, q any, condition Condition, pTName string
 	} else {
 		tname = pTName
 	}
+	if qType.Kind() == reflect.Ptr {
+		qType = qType.Elem()
+	}
+	if qType.Kind() != reflect.Struct {
+		fmt.Printf("SeachQuery field undefined tag of type %s, expect type is struct\n", qType.Name())
+		return
+	}
 
 	for i := 0; i < qType.NumField(); i++ {
 		tag, ok = "", false

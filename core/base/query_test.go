@@ -62,7 +62,7 @@ type SysOperaLogGetPageReq struct {
 	ReqPage   `query:"-"`
 	SortOrder string `json:"-" query:"column:id;type:order;"`
 	Status    int    `json:"status" query:"column:status"` //操作状态 1:成功 2:失败
-
+	NoTag     string `json:"-"`
 }
 
 func (SysOperaLogGetPageReq) TableName() string {
