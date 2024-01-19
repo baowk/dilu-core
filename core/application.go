@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"github.com/baowk/dilu-core/core/mongodb"
 	"log"
 	"net/http"
 	"os/signal"
@@ -68,10 +67,6 @@ func Init() {
 		RedisLock = locker.NewRedis(r.GetClient())
 	}
 	dbInit()
-	// 判断是否启用mongo
-	if Cfg.Mongodb.Open {
-		mongodb.MongoInit(Cfg.Mongodb)
-	}
 }
 
 func Run() {
