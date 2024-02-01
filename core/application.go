@@ -129,7 +129,7 @@ func logInit() {
 func zapInit() (logger *zap.Logger) {
 	if ok, _ := files.PathExists(Cfg.Logger.Director); !ok { // 判断是否有Director文件夹
 		fmt.Printf("create %v directory\n", Cfg.Logger.Director)
-		_ = os.Mkdir(Cfg.Logger.Director, os.ModePerm)
+		_ = os.MkdirAll(Cfg.Logger.Director, os.ModePerm)
 	}
 
 	cores := Zap.GetZapCores()
