@@ -8,7 +8,7 @@ import (
 )
 
 type DB struct {
-	DSN            string `mapstructure:"dns" json:"dsn" yaml:"dsn"`                                        //连接参数
+	DSN            string `mapstructure:"dns" json:"dns" yaml:"dns"`                                        //连接参数
 	Disable        bool   `mapstructure:"disable" json:"disable" yaml:"disable"`                            //是否启用 默认true
 	Driver         string `mapstructure:"driver" json:"driver" yaml:"driver"`                               //数据库类型
 	Prefix         string `mapstructure:"prefix" json:"prefix" yaml:"prefix"`                               //全局表前缀，单独定义TableName则不生效
@@ -22,7 +22,7 @@ type DB struct {
 }
 
 type DBCfg struct {
-	DSN            string        `mapstructure:"dns" json:"dsn" yaml:"dsn"`                                        //连接参数
+	DSN            string        `mapstructure:"dns" json:"dns" yaml:"dns"`                                        //连接参数
 	Driver         string        `mapstructure:"driver" json:"driver" yaml:"driver"`                               //数据库类型
 	Prefix         string        `mapstructure:"prefix" json:"prefix" yaml:"prefix"`                               //全局表前缀，单独定义TableName则不生效
 	Singular       bool          `mapstructure:"singular" json:"singular" yaml:"singular"`                         //是否开启全局禁用复数，true表示开启
