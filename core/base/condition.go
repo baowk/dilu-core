@@ -97,7 +97,8 @@ func makeTag(tag string) *resolveSearchTag {
 			}
 		case "on":
 			if len(ts) > 1 {
-				r.On = ts[1:]
+				onFields := strings.Split(ts[1], ",")
+				r.On = onFields
 			}
 		case "join":
 			if len(ts) > 1 {

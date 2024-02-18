@@ -184,10 +184,9 @@ func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue refle
 		return
 	case JOIN:
 		//左关联
-		join := condition.SetJoinOn(t.Type, fmt.Sprintf(
+		condition.SetJoinOn(t.Type, fmt.Sprintf(
 			"left join %s on %s.%s = %s.%s", t.Join, t.Join, t.On[0], t.Table, t.On[1],
 		))
-		ResolveSearchQuery(driver, qValue.Field(i).Interface(), join, tname)
 		return
 	default:
 		condition.SetWhere(fmt.Sprintf("%s.%s = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
@@ -241,7 +240,7 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 		return
 	case JOIN:
 		//左关联
-		join := condition.SetJoinOn(t.Type, fmt.Sprintf(
+		condition.SetJoinOn(t.Type, fmt.Sprintf(
 			"left join `%s` on `%s`.`%s` = `%s`.`%s`",
 			t.Join,
 			t.Join,
@@ -249,7 +248,6 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 			t.Table,
 			t.On[1],
 		))
-		ResolveSearchQuery(driver, qValue.Field(i).Interface(), join, tname)
 		return
 	default:
 		condition.SetWhere(fmt.Sprintf("`%s`.`%s` = ?", t.Table, t.Column), []interface{}{qValue.Field(i).Interface()})
