@@ -32,6 +32,7 @@ var (
 	engine    http.Handler
 	dbs       = make(map[string]*gorm.DB, 0)
 	RedisLock *locker.Redis
+	Started   = make(chan int, 1)
 )
 
 func GetEngine() http.Handler {
@@ -104,6 +105,9 @@ func Run() {
 		}
 	}
 
+	fmt.Println("服务初始化完毕")
+	Started <- 1
+	fmt.Println("给信号量Started")
 	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
