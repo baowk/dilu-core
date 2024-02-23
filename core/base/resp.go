@@ -114,6 +114,33 @@ func resMsg(c *gin.Context, code int, msg string, data ...any) {
 	}
 }
 
+func resMsgWithNoAbort(c *gin.Context, code int, msg string, data ...any) {
+	if msg == "" {
+		msg = i18n.Lang.GetMsg(code, c)
+	}
+	if len(data) == 0 {
+		c.JSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+		})
+	} else if len(data) == 1 {
+		c.JSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+			Data:  data[0],
+		})
+	} else {
+		c.JSON(http.StatusOK, Resp{
+			ReqId: c.GetString(consts.REQ_ID),
+			Code:  code,
+			Msg:   msg,
+			Data:  data,
+		})
+	}
+}
+
 func pageResp(c *gin.Context, list any, total int64, page int, pageSize int) {
 	p := PageResp{
 		CurrentPage: page,
