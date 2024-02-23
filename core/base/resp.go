@@ -92,20 +92,20 @@ func resMsg(c *gin.Context, code int, msg string, data ...any) {
 		msg = i18n.Lang.GetMsg(code, c)
 	}
 	if len(data) == 0 {
-		c.AbortWithStatusJSON(http.StatusOK, Resp{
+		c.JSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,
 		})
 	} else if len(data) == 1 {
-		c.AbortWithStatusJSON(http.StatusOK, Resp{
+		c.JSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,
 			Data:  data[0],
 		})
 	} else {
-		c.AbortWithStatusJSON(http.StatusOK, Resp{
+		c.JSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,
@@ -114,25 +114,25 @@ func resMsg(c *gin.Context, code int, msg string, data ...any) {
 	}
 }
 
-func resMsgWithNoAbort(c *gin.Context, code int, msg string, data ...any) {
+func resMsgWithAbort(c *gin.Context, code int, msg string, data ...any) {
 	if msg == "" {
 		msg = i18n.Lang.GetMsg(code, c)
 	}
 	if len(data) == 0 {
-		c.JSON(http.StatusOK, Resp{
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,
 		})
 	} else if len(data) == 1 {
-		c.JSON(http.StatusOK, Resp{
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,
 			Data:  data[0],
 		})
 	} else {
-		c.JSON(http.StatusOK, Resp{
+		c.AbortWithStatusJSON(http.StatusOK, Resp{
 			ReqId: c.GetString(consts.REQ_ID),
 			Code:  code,
 			Msg:   msg,

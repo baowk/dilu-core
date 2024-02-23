@@ -39,8 +39,8 @@ func (e *BaseApi) PureOk(c *gin.Context, data any) {
 	pureJSON(c, data)
 }
 
-func (e *BaseApi) OkWithNoAbout(c *gin.Context, data any) {
-	resMsgWithNoAbort(c, http.StatusOK, "OK", data)
+func (e *BaseApi) OkWithAbout(c *gin.Context, data any) {
+	resMsgWithAbort(c, http.StatusOK, "OK", data)
 }
 
 func (e *BaseApi) ResCustom(c *gin.Context, opts ...Option) {
