@@ -32,7 +32,8 @@ var (
 	engine    http.Handler
 	dbs       = make(map[string]*gorm.DB, 0)
 	RedisLock *locker.Redis
-	Started   = make(chan int, 1)
+	Started   = make(chan byte, 1)
+	ToClose   = make(chan byte, 1)
 )
 
 func GetEngine() http.Handler {
@@ -42,7 +43,6 @@ func GetEngine() http.Handler {
 func SetEngine(aEngine http.Handler) {
 	engine = aEngine
 }
-
 func GetGinEngine() *gin.Engine {
 	var r *gin.Engine
 	lock.RLock()
@@ -92,6 +92,7 @@ func Run() {
 			log.Fatal("listen: ", err)
 		}
 	}()
+
 	fmt.Println(text.Green(`Dilu github:`) + text.Blue(`https://github.com/baowk/dilu`))
 	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red("[ "+addr+" ]"))
 	fmt.Println(text.Yellow("Dilu Go Go Go ~ ~ ~ "))
@@ -105,22 +106,27 @@ func Run() {
 		}
 	}
 
-	fmt.Println("服务初始化完毕")
+	Log.Debug("服务初始化完毕")
 	Started <- 1
-	fmt.Println("给信号量Started")
+	Log.Debug("给信号量Started")
 	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 
+	//关闭服务器信号
+	ToClose <- 1
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	fmt.Printf("%s Shutdown Server ... \r\n", time.Now())
+	Log.Sugar().Infof("%s Shutdown Server ...", time.Now())
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server Shutdown:", err)
 	}
-	log.Println("Server exiting")
+
+	Log.Info("Server exiting")
+	time.Sleep(time.Second * time.Duration(Cfg.Server.GetCloseWait()))
 }
 
 func logInit() {
