@@ -117,7 +117,16 @@ func (s *BaseService) GetByMap(where map[string]any, models any) error {
 * count: 查询条数
  */
 func (s *BaseService) Count(model any, count *int64) error {
-	return s.DB().Where(model).Count(count).Error
+	return s.DB().Model(model).Where(model).Count(count).Error
+}
+
+/**
+* 条数查询
+* model: 查询条件
+* count: 查询条数
+ */
+func (s *BaseService) CountByMap(where map[string]any, model any, count *int64) error {
+	return s.DB().Model(model).Where(where).Count(count).Error
 }
 
 /**
