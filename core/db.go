@@ -3,8 +3,9 @@ package core
 import (
 	"database/sql"
 	"errors"
+	"io"
 	"log"
-	"path"
+	"log/slog"
 	"time"
 
 	"github.com/baowk/dilu-core/common/consts"
@@ -18,12 +19,11 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func dbInit() {
-
+func dbInit(logWrite io.Writer) {
 	if Cfg.DBCfg.DSN != "" {
 		logMode := config.GetLogMode(Cfg.DBCfg.LogMode)
 		initDb(Cfg.DBCfg.Driver, Cfg.DBCfg.DSN, Cfg.DBCfg.Prefix, consts.DB_DEF, logMode, Cfg.DBCfg.SlowThreshold,
-			Cfg.DBCfg.MaxIdleConns, Cfg.DBCfg.MaxOpenConns, Cfg.DBCfg.MaxLifetime, Cfg.DBCfg.Singular, Cfg.Logger.Color(), Cfg.DBCfg.IgnoreNotFound)
+			Cfg.DBCfg.MaxIdleConns, Cfg.DBCfg.MaxOpenConns, Cfg.DBCfg.MaxLifetime, Cfg.DBCfg.Singular, Cfg.Logger.Color(), Cfg.DBCfg.IgnoreNotFound, logWrite)
 	}
 	for key, dbc := range Cfg.DBCfg.DBS {
 		if !dbc.Disable {
@@ -64,24 +64,24 @@ func dbInit() {
 			if !ignoreNotFound && Cfg.DBCfg.IgnoreNotFound {
 				ignoreNotFound = Cfg.DBCfg.IgnoreNotFound
 			}
-			initDb(driver, dbc.DSN, prefix, key, logMode, slow, maxIdle, maxOpen, maxLifetime, singular, Cfg.Logger.Color(), ignoreNotFound)
+			initDb(driver, dbc.DSN, prefix, key, logMode, slow, maxIdle, maxOpen, maxLifetime, singular, Cfg.Logger.Color(), ignoreNotFound, logWrite)
 		}
 	}
 
 }
 
-func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxIdle, maxOpen, maxLifetime int, singular, color, ignoreNotFound bool) {
+func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxIdle, maxOpen, maxLifetime int, singular, color, ignoreNotFound bool, logWrite io.Writer) {
 	var db *gorm.DB
 	var err error
 	switch driver {
 	case Mysql.String():
-		db, err = gorm.Open(mysql.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound))
+		db, err = gorm.Open(mysql.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	case Pgsql.String():
-		db, err = gorm.Open(postgres.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound))
+		db, err = gorm.Open(postgres.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	case Sqlite.String():
-		db, err = gorm.Open(sqlite.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound))
+		db, err = gorm.Open(sqlite.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	case Mssql.String():
-		db, err = gorm.Open(sqlserver.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound))
+		db, err = gorm.Open(sqlserver.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	// case "oracle":
 	// 	db, err = gorm.Open(oracle.Open(dbc.DSN), &gorm.Config{})
 	// case "clickhouse":
@@ -90,13 +90,13 @@ func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxI
 		err = errors.New("db err")
 	}
 	if err != nil {
-        log.Printf("db:%s dns:%s err:%s", key, dns, err.Error())
+		slog.Error("connect db err ", "dns", dns, "key", key, err)
 		panic(err)
 	}
 	var sqlDB *sql.DB
 	sqlDB, err = db.DB()
 	if err != nil {
-        log.Printf("db:%s dns:%s err:%s", key, dns, err.Error())
+		slog.Error("connect db err ", "dns", dns, "key", key, err)
 		panic(err)
 	}
 	sqlDB.SetMaxIdleConns(maxIdle)
@@ -105,7 +105,7 @@ func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxI
 	SetDb(key, db)
 }
 
-func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, singular, color, ignoreNotFound bool) *gorm.Config {
+func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, singular, color, ignoreNotFound bool, logW io.Writer) *gorm.Config {
 	config := &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   prefix,
@@ -114,10 +114,10 @@ func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, si
 		//DisableForeignKeyConstraintWhenMigrating: true,
 	}
 
-	filePath := path.Join(Cfg.Logger.Director, "%Y-%m-%d", "sql.log")
-	w, _ := GetWriter(filePath)
+	//filePath := path.Join(Cfg.Logger.Director, "%Y-%m-%d", "sql.log")
+	//w, _ := GetWriter(filePath)
 	slow := time.Duration(slowThreshold) * time.Millisecond
-	_default := logger.New(log.New(w, "", log.LstdFlags), logger.Config{
+	_default := logger.New(log.New(logW, prefix, log.LstdFlags), logger.Config{
 		SlowThreshold:             slow,
 		Colorful:                  color,
 		IgnoreRecordNotFoundError: ignoreNotFound,
@@ -128,19 +128,10 @@ func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, si
 	return config
 }
 
-// var (
-// 	gplusInit = true
-// )
-
 func SetDb(key string, db *gorm.DB) {
 	lock.Lock()
 	defer lock.Unlock()
 	dbs[key] = db
-	// //集成gplus
-	// if gplusInit {
-	// 	gplusInit = false
-	// 	gplus.Init(db)
-	// }
 }
 
 // GetDb 获取所有map里的db数据
@@ -154,10 +145,8 @@ func Db(name string) *gorm.DB {
 	lock.RLock()
 	defer lock.RUnlock()
 	if db, ok := dbs[name]; !ok || db == nil {
-        log.Printf("db:%s not init", name)
+		slog.Error("db init err", errors.New(name))
 		panic("db not init")
-		// Log.Error("DB not found", zap.Error(errors.New(name+" DB not found")))
-		// return nil
 	} else {
 		return db
 	}

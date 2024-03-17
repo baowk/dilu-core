@@ -7,7 +7,6 @@ import (
 
 	"github.com/baowk/dilu-core/config"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
 type ICache interface {
@@ -33,7 +32,7 @@ func New(conf config.CacheCfg) ICache {
 		if err != nil {
 			panic("redis connect ping failed, err:" + err.Error())
 		} else {
-			fmt.Println("redis connect ping response:", zap.String("pong", pong))
+			fmt.Println("redis connect ping response:", "pong", pong)
 			r := RedisCache{
 				redis:  rdb,
 				prefix: conf.Prefix,
