@@ -43,7 +43,11 @@ func GetEngine() http.Handler {
 func SetEngine(aEngine http.Handler) {
 	engine = aEngine
 }
+
 func GetGinEngine() *gin.Engine {
+	if Cfg.Server.Mode == ModeProd.String() {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	var r *gin.Engine
 	lock.RLock()
 	defer lock.RUnlock()
@@ -71,10 +75,6 @@ func Init() {
 }
 
 func Run() {
-	if Cfg.Server.Mode == ModeProd.String() {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
 	addr := fmt.Sprintf("%s:%d", Cfg.Server.GetHost(), Cfg.Server.GetPort())
 
 	//服务启动参数
