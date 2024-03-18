@@ -74,11 +74,14 @@ func Init() {
 	}
 }
 
-func Run() {
+// RunMode gin运行模式
+func RunMode() {
 	if Cfg.Server.Mode == ModeProd.String() {
 		gin.SetMode(gin.ReleaseMode)
 	}
+}
 
+func Run() {
 	addr := fmt.Sprintf("%s:%d", Cfg.Server.GetHost(), Cfg.Server.GetPort())
 
 	//服务启动参数
