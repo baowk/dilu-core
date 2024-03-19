@@ -8,7 +8,9 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"strings"
 )
 
 // 将RSA私钥转换为byte
@@ -62,6 +64,40 @@ func ParsePubKey(publicKey []byte) (*rsa.PublicKey, error) {
 		return nil, fmt.Errorf("无效的RSA公钥")
 	}
 	return rsaPublicKey, nil
+}
+
+// 将RSAP kcs8私钥转换为byte
+func PrivateKeyPkcs8ToPem(privateKey *rsa.PrivateKey) ([]byte, error) {
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	privateKeyBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+	return pem.EncodeToMemory(privateKeyBlock), err
+}
+
+// 将Pkcs8 格式byte转为私钥
+func ParsePriKeyPkcs8(privateKeyPkcs8 []byte) (*rsa.PrivateKey, error) {
+	privateKeyBlock, _ := pem.Decode(privateKeyPkcs8)
+	if privateKeyBlock == nil {
+		return nil, fmt.Errorf("Pkcs8无效的私钥")
+	}
+	// if privateKeyBlock == nil || privateKeyBlock.Type != "RSA PRIVATE KEY" {
+	// 	return nil, fmt.Errorf("Pkcs8无效的私钥")
+	// }
+	priKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	rsaPrivateKey, ok := priKey.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("Pkcs8 contained non-RSA key. Expected RSA key.")
+	}
+	return rsaPrivateKey, nil
 }
 
 // 生成密钥对
@@ -130,6 +166,24 @@ func RSA_Decrypt(encryptedMsg, priKey string) ([]byte, error) {
 	return RsaDecrypt(b, []byte(priKey))
 }
 
+// 私钥解密Pkcs8 Key
+func RSA_DecryptPkcs8(encryptedMsg, priKey string) ([]byte, error) {
+	b, err := DecodeString(encryptedMsg)
+	if err != nil {
+		return nil, err
+	}
+	return RsaDecryptPkcs8(b, []byte(priKey))
+}
+
+// 私钥解密 Pkcs8 Key
+func RsaDecryptPkcs8(encryptedMsg, priKey []byte) ([]byte, error) {
+	privateKey, err := ParsePriKeyPkcs8(priKey)
+	if err != nil {
+		return nil, err
+	}
+	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedMsg)
+}
+
 // 私钥解密
 func RsaDecrypt(encryptedMsg, priKey []byte) ([]byte, error) {
 	privateKey, err := ParsePriKey(priKey)
@@ -145,10 +199,26 @@ func RSA_Sign(priKey string, message []byte) ([]byte, error) {
 }
 
 // RsaSign 私钥加签
+func RSA_SignPkcs8(priKey string, message []byte) ([]byte, error) {
+	return RsaSignPkcs8([]byte(priKey), message)
+}
+
+// RsaSign 私钥加签
 func RsaSign(priKey, message []byte) ([]byte, error) {
 	privateKey, _ := ParsePriKey(priKey)
+	return RsaSignKey(privateKey, message)
+}
+
+// RsaSign Pkcs8私钥加签
+func RsaSignPkcs8(priKey, message []byte) ([]byte, error) {
+	privateKey, _ := ParsePriKeyPkcs8(priKey)
+	return RsaSignKey(privateKey, message)
+}
+
+// 根据私钥加签
+func RsaSignKey(pkey *rsa.PrivateKey, message []byte) ([]byte, error) {
 	hash := sha256.Sum256(message)
-	return rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hash[:])
+	return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA256, hash[:])
 }
 
 // RsaVerify 公钥验签
@@ -161,4 +231,66 @@ func RsaVerify(publicKeyPEM, message []byte, signature []byte) error {
 	publicKey, _ := ParsePubKey(publicKeyPEM)
 	hash := sha256.Sum256(message)
 	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
+}
+
+func RsaPriKeyPkcs8To1(priPkcs8Key []byte) (string, error) {
+	pk, err := ParsePriKeyPkcs8(priPkcs8Key)
+	if err != nil {
+		return "", err
+	}
+	return string(PrivateKeyToPem(pk)), nil
+}
+
+func RsaPriKeyPkcs1To8(priPkcs1Key []byte) (string, error) {
+	pk, err := ParsePriKey(priPkcs1Key)
+	if err != nil {
+		return "", err
+	}
+	b, err := PrivateKeyPkcs8ToPem(pk)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func RsaKeyFmt(key string) string {
+	if !strings.Contains(key, "-----\n") {
+		key = strings.Replace(key, "-----", "-----\n", 1)
+	}
+	if !strings.Contains(key, "\n-----END") {
+		key = strings.Replace(key, "-----END", "\n-----END", -1)
+	}
+	if strings.Contains(key, "\t") {
+		return strings.Replace(key, "\t", "", -1)
+	}
+	return key
+	// if strings.Contains(key, "\n\r") {
+	// 	return key, nil
+	// }
+	// if strings.Contains(key, "\r") {
+	// 	return strings.Replace(key, "\r", "\n\r", -1), nil
+	// }
+	// if strings.Contains(key, "-----") {
+	// 	fk := ""
+	// 	arr := strings.Split(key, "-----")
+	// 	for i := 0; i < len(arr); i++ {
+	// 		if arr[i] == "" {
+	// 			continue
+	// 		} else if strings.HasPrefix(strings.ToUpper(arr[i]), "BEGIN") {
+	// 			fk += "-----" + arr[i] + "-----\n\r"
+	// 		} else if len(arr[i]) > 64 {
+	// 			cnt := len(arr[i]) / 64
+	// 			for j := 0; j < cnt; j++ {
+	// 				fk += arr[i][j*64:(j+1)*64] + "\n\r"
+	// 			}
+	// 			if len(arr[i])%64 != 0 {
+	// 				fk += arr[i][cnt*64:] + "\n\r"
+	// 			}
+	// 		} else {
+	// 			fk += "-----" + arr[i] + "-----"
+	// 		}
+	// 	}
+	// 	return fk, nil
+	// }
+	// return key, nil
 }
