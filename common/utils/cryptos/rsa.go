@@ -4,7 +4,9 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
@@ -221,6 +223,21 @@ func RsaSignKey(pkey *rsa.PrivateKey, message []byte) ([]byte, error) {
 	return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA256, hash[:])
 }
 
+func RsaSignWithHash(pkey *rsa.PrivateKey, message []byte, algorithm uint16) ([]byte, error) {
+	switch algorithm {
+	case 1:
+		hash := sha1.Sum(message)
+		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA1, hash[:])
+	case 256:
+		hash := sha256.Sum256(message)
+		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA256, hash[:])
+	case 512:
+		hash := sha512.Sum512(message)
+		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA512, hash[:])
+	}
+	return nil, errors.New("不支持的hash算法")
+}
+
 // RsaVerify 公钥验签
 func RSA_Verify(publicKeyPEM string, message []byte, signature []byte) error {
 	return RsaVerify([]byte(publicKeyPEM), message, signature)
@@ -231,6 +248,22 @@ func RsaVerify(publicKeyPEM, message []byte, signature []byte) error {
 	publicKey, _ := ParsePubKey(publicKeyPEM)
 	hash := sha256.Sum256(message)
 	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
+}
+
+func RsaVerifyWithHash(publicKeyPEM, message []byte, signature []byte, algorithm uint16) error {
+	publicKey, _ := ParsePubKey(publicKeyPEM)
+	switch algorithm {
+	case 1:
+		hash := sha1.Sum(message)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+	case 256:
+		hash := sha256.Sum256(message)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+	case 512:
+		hash := sha512.Sum512(message)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+	}
+	return errors.New("不支持的hash算法")
 }
 
 func RsaPriKeyPkcs8To1(priPkcs8Key []byte) (string, error) {
