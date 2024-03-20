@@ -228,9 +228,19 @@ func RsaSignWithHash(pkey *rsa.PrivateKey, message []byte, algorithm uint16) ([]
 	case 1:
 		hash := sha1.Sum(message)
 		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA1, hash[:])
+	case 224:
+		h224 := crypto.SHA224.New()
+		h224.Write(message)
+		hash := h224.Sum(nil)
+		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA224, hash[:])
 	case 256:
 		hash := sha256.Sum256(message)
 		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA256, hash[:])
+	case 384:
+		h384 := crypto.SHA384.New()
+		h384.Write(message)
+		hash := h384.Sum(nil)
+		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA384, hash[:])
 	case 512:
 		hash := sha512.Sum512(message)
 		return rsa.SignPKCS1v15(rand.Reader, pkey, crypto.SHA512, hash[:])
@@ -256,12 +266,22 @@ func RsaVerifyWithHash(publicKeyPEM, message []byte, signature []byte, algorithm
 	case 1:
 		hash := sha1.Sum(message)
 		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+	case 224:
+		h224 := crypto.SHA224.New()
+		h224.Write(message)
+		hash := h224.Sum(nil)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA224, hash[:], signature)
 	case 256:
 		hash := sha256.Sum256(message)
-		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
+	case 384:
+		h384 := crypto.SHA384.New()
+		h384.Write(message)
+		hash := h384.Sum(nil)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA384, hash[:], signature)
 	case 512:
 		hash := sha512.Sum512(message)
-		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA1, hash[:], signature)
+		return rsa.VerifyPKCS1v15(publicKey, crypto.SHA512, hash[:], signature)
 	}
 	return errors.New("不支持的hash算法")
 }
