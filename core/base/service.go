@@ -167,6 +167,31 @@ func (s *BaseService) Paginate(pageSize, pageIndex int) func(db *gorm.DB) *gorm.
 }
 
 /**
+* chunk 查询
+ */
+func (s *BaseService) Chunk(db *gorm.DB, size int, callback func(records []map[string]interface{}) error) error {
+	var offset int
+	for {
+		var records []map[string]interface{}
+		// 检索 size 条记录
+		if err := db.Limit(size).Offset(offset).Find(&records).Error; err != nil {
+			return err
+		}
+		// 如果没有更多记录，则退出循环
+		if len(records) == 0 {
+			break
+		}
+		// 调用回调函数处理记录
+		if err := callback(records); err != nil {
+			return err
+		}
+		// 更新偏移量
+		offset += size
+	}
+	return nil
+}
+
+/**
 * 查询条件组装
  */
 func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
