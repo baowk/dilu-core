@@ -1,6 +1,7 @@
 package base
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 )
@@ -62,7 +63,7 @@ type SysOperaLogGetPageReq struct {
 	ReqPage   `query:"-"`
 	SortOrder string `json:"-" query:"column:id;type:order;"`
 	Status    int    `json:"status" query:"column:status"` //操作状态 1:成功 2:失败
-
+	NoTag     string `json:"-"`
 }
 
 func (SysOperaLogGetPageReq) TableName() string {
@@ -103,4 +104,37 @@ func TestResolveSearchQuery2(t *testing.T) {
 	for _, o := range condition.Order {
 		fmt.Println(o)
 	}
+}
+
+func TestMakeTag(t *testing.T) {
+	tagString := "type:int;column:name;table:users;on:users.id:orders.user_id;join:left"
+	// tests := []struct {
+	// 	input string
+	// 	want  *resolveSearchTag
+	// }{
+	// 	{tagString, &resolveSearchTag{
+	// 		Type:   "int",
+	// 		Column: "name",
+	// 		Table:  "users",
+	// 		On:     []string{"users.id", "orders.user_id"},
+	// 		Join:   "left",
+	// 	}},
+	// }
+
+	got := makeTag(tagString)
+	b, _ := json.Marshal(got)
+	fmt.Println(string(b))
+
+	// for _, test := range tests {
+	// 	t.Run(test.input, func(t *testing.T) {
+	// 		got := makeTag(test.input)
+	// 		if !reflect.DeepEqual(got, test.want) {
+	// 			t.Errorf("makeTag(%s) = %v, want %v", test.input, got, test.want)
+	// 		} else {
+	// 			fmt.Println("===============\n", got.On, reflect.TypeOf(got.On), "\n================")
+	// 			fmt.Println("0：===============\n", got.On[0], "\n================")
+	// 			fmt.Println("1：===============\n", got.On[1], "\n================")
+	// 		}
+	// 	})
+	// }
 }

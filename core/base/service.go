@@ -16,87 +16,146 @@ type BaseService struct {
 	DbName string
 }
 
-// 数据库
+/*
+* 获取数据库
+ */
 func (s *BaseService) DB() *gorm.DB {
 	return core.Db(s.DbName)
 }
 
-// 缓存
+/*
+* 获取缓存
+ */
 func (s *BaseService) Cache() cache.ICache {
 	return core.Cache
 }
 
-// 创建 结构体model
+/*
+* 创建 结构体model
+ */
 func (s *BaseService) Create(model any) error {
 	return s.DB().Create(model).Error
 }
 
-// 更新整个模型 结构体model
+/*
+* 更新整个模型 结构体model 注意空值
+ */
 func (s *BaseService) Save(model any) error {
 	return s.DB().Save(model).Error
 }
 
-// 根据id获取模型
-func (s *BaseService) Get(id any, model any) error {
-	return s.DB().First(model, id).Error
+/*
+* 条件跟新
+ */
+func (s *BaseService) UpdateWhere(model any, where any, updates map[string]any) error {
+	return s.DB().Model(model).Where(where).Updates(updates).Error
 }
 
-// 条件删除，模型
+/*
+* 模型更新
+ */
+func (s *BaseService) UpdateWhereModel(where any, updates any) error {
+	return s.DB().Where(where).Updates(updates).Error
+}
+
+/*
+* 根据模型id更新
+ */
+func (s *BaseService) UpdateById(model any) error {
+	return s.DB().Updates(model).Error
+}
+
+/*
+* 条件删除，模型
+ */
 func (s *BaseService) DelWhere(model any) error {
 	return s.DB().Delete(model).Error
 }
 
-// 条件删除，模型 where 为map
+/*
+* 条件删除，模型 where 为map
+ */
 func (s *BaseService) DelWhereMap(model any, where map[string]any) error {
 	return s.DB().Model(model).Delete(where).Error
 }
 
-// 多个id删除
+/*
+*多个id删除
+ */
 func (s *BaseService) DelIds(model any, ids any) error {
 	return s.DB().Delete(model, ids).Error
 }
 
-// 分页获取
+/*
+* 根据id获取模型
+ */
+func (s *BaseService) Get(id any, model any) error {
+	return s.DB().First(model, id).Error
+}
+
+/**
+* 条件查询
+* where: where 查询条件model
+* models: 代表查询返回的model数组
+ */
+func (s *BaseService) GetByWhere(where any, models any) error {
+	return s.DB().Where(where).Find(models).Error
+}
+
+/**
+* 列表条件查询
+* where: 条件查询
+* models: 代表查询返回的model数组
+ */
+func (s *BaseService) GetByMap(where map[string]any, models any) error {
+	return s.DB().Where(where).Find(models).Error
+}
+
+/**
+* 条数查询
+* model: 查询条件
+* count: 查询条数
+ */
+func (s *BaseService) Count(model any, count *int64) error {
+	return s.DB().Model(model).Where(model).Count(count).Error
+}
+
+/**
+* 条数查询
+* model: 查询条件
+* count: 查询条数
+ */
+func (s *BaseService) CountByMap(where map[string]any, model any, count *int64) error {
+	return s.DB().Model(model).Where(where).Count(count).Error
+}
+
+/**
+*	查询
+* where 实现Query接口
+ */
+func (s *BaseService) Query(where Query, models any) error {
+	return s.DB().Scopes(s.MakeCondition(where)).Find(models).Error
+}
+
+/*
+* 分页获取
+ */
 func (s *BaseService) Page(where any, data any, total *int64, limit, offset int) error {
 	return s.DB().Where(where).Limit(limit).Offset(offset).
 		Find(data).Limit(-1).Offset(-1).Count(total).Error
 }
 
-// 条件跟新
-func (s *BaseService) UpdateWhere(model any, where any, updates map[string]any) error {
-	return s.DB().Model(model).Where(where).Updates(updates).Error
-}
-
-// 模型更新
-func (s *BaseService) UpdateWhereModel(where any, updates any) error {
-	return s.DB().Where(where).Updates(updates).Error
-}
-
-// 根据模型id更新
-func (s *BaseService) UpdateById(model any) error {
-	return s.DB().Updates(model).Error
-}
-
-// 条件查询 model为数组
-func (s *BaseService) GetByWhere(where any, model any) error {
-	return s.DB().Where(where).Find(model).Error
-}
-
-// 条件查询 model为数组
-func (s *BaseService) GetByMap(where map[string]any, model any) error {
-	return s.DB().Where(where).Find(model).Error
-}
-
-func (s *BaseService) Query(where Query, models any) error {
-	return s.DB().Scopes(s.MakeCondition(where)).Find(models).Error
-}
-
-// 分页获取
+/*
+* 分页获取
+ */
 func (s *BaseService) QueryPage(where Query, models any, total *int64, limit, offset int) error {
 	return s.DB().Scopes(s.MakeCondition(where)).Limit(limit).Offset(offset).
 		Find(models).Limit(-1).Offset(-1).Count(total).Error
 }
 
+/*
+* 分页组装
+ */
 func (s *BaseService) Paginate(pageSize, pageIndex int) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		offset := (pageIndex - 1) * pageSize
@@ -107,6 +166,9 @@ func (s *BaseService) Paginate(pageSize, pageIndex int) func(db *gorm.DB) *gorm.
 	}
 }
 
+/**
+* 查询条件组装
+ */
 func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		condition := &GormCondition{

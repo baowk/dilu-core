@@ -1,6 +1,8 @@
 package base
 
 import (
+	"net/http"
+
 	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/core/errs"
 	"github.com/gin-gonic/gin"
@@ -15,7 +17,6 @@ func (e *BaseApi) GetReqId(c *gin.Context) string {
 
 func (e *BaseApi) Error(c *gin.Context, err error) {
 	resMsg(c, FAILURE, err.Error())
-
 }
 
 func (e *BaseApi) Fail(c *gin.Context, code int, msg string, data ...any) {
@@ -36,6 +37,10 @@ func (e *BaseApi) Ok(c *gin.Context, data ...any) {
 
 func (e *BaseApi) PureOk(c *gin.Context, data any) {
 	pureJSON(c, data)
+}
+
+func (e *BaseApi) OkWithAbout(c *gin.Context, data any) {
+	resMsgWithAbort(c, http.StatusOK, "OK", data)
 }
 
 func (e *BaseApi) ResCustom(c *gin.Context, opts ...Option) {
