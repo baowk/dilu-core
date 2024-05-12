@@ -1,16 +1,17 @@
 package config
 
 type AppCfg struct {
-	Server     ServerCfg     `mapstructure:"server" json:"server" yaml:"server"`                //服务器配置
-	Remote     RemoteCfg     `mapstructure:"remote" json:"remote" yaml:"remote"`                //远程配置
-	Logger     LogCfg        `mapstructure:"logger" json:"logger" yaml:"logger"`                //log配置
-	JWT        JWT           `mapstructure:"jwt" json:"jwt" yaml:"jwt"`                         //jwt配置
-	DBCfg      DBCfg         `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`                   // 数据库配置
-	Cache      CacheCfg      `mapstructure:"cache" json:"cache" yaml:"cache"`                   // 缓存
-	Cors       CORS          `mapstructure:"cors" json:"cors" yaml:"cors"`                      //cors配置
-	Extends    any           `mapstructure:"extend" json:"extend" yaml:"extend"`                //扩展配置
-	Gen        GenCfg        `mapstructure:"gen" json:"gen" yaml:"gen"`                         //是否可生成
-	GrpcServer GrpcServerCfg `mapstructure:"grpc-server" json:"grpc-server" yaml:"grpc-server"` //grpc服务配置
+	Server      ServerCfg     `mapstructure:"server" json:"server" yaml:"server"`                   //服务器配置
+	Remote      RemoteCfg     `mapstructure:"remote" json:"remote" yaml:"remote"`                   //远程配置
+	Logger      LogCfg        `mapstructure:"logger" json:"logger" yaml:"logger"`                   //log配置
+	JWT         JWT           `mapstructure:"jwt" json:"jwt" yaml:"jwt"`                            //jwt配置
+	DBCfg       DBCfg         `mapstructure:"dbcfg" json:"dbcfg" yaml:"dbcfg"`                      // 数据库配置
+	Cache       CacheCfg      `mapstructure:"cache" json:"cache" yaml:"cache"`                      // 缓存
+	Cors        CORS          `mapstructure:"cors" json:"cors" yaml:"cors"`                         //cors配置
+	Extends     any           `mapstructure:"extend" json:"extend" yaml:"extend"`                   //扩展配置
+	Gen         GenCfg        `mapstructure:"gen" json:"gen" yaml:"gen"`                            //是否可生成
+	GrpcServer  GrpcServerCfg `mapstructure:"grpc-server" json:"grpc-server" yaml:"grpc-server"`    //grpc服务配置
+	AccessLimit AccessLimit   `mapstructure:"access-limit" json:"access-limit" yaml:"access-limit"` //访问限制配置
 	// RdConfig   rd.Config     `mapstructure:"rd-config" json:"rd-config" yaml:"rd-config"`       //注册中心配置
 }
 
@@ -42,56 +43,56 @@ type GrpcServerCfg struct {
 
 func (e *GrpcServerCfg) GetHost() string {
 	if e.Host == "" {
-		return "0.0.0.0"
+		e.Host = "0.0.0.0"
 	}
 	return e.Host
 }
 
 func (e *GrpcServerCfg) GetPort() int {
 	if e.Port < 1 {
-		return 7789
+		e.Port = 7789
 	}
 	return e.Port
 }
 
 func (e *ServerCfg) GetLang() string {
 	if e.Lang == "" {
-		return "zh-CN"
+		e.Lang = "zh-CN"
 	}
 	return e.Lang
 }
 
 func (e *ServerCfg) GetHost() string {
 	if e.Host == "" {
-		return "0.0.0.0"
+		e.Host = "0.0.0.0"
 	}
 	return e.Host
 }
 
 func (e *ServerCfg) GetPort() int {
 	if e.Port < 1 {
-		return 7788
+		e.Port = 7788
 	}
 	return e.Port
 }
 
 func (e *ServerCfg) GetCloseWait() int {
 	if e.CloseWait < 1 {
-		return 1
+		e.CloseWait = 1
 	}
 	return e.CloseWait
 }
 
 func (e *ServerCfg) GetReadTimeout() int {
 	if e.ReadTimeout < 1 {
-		return 20
+		e.ReadTimeout = 20
 	}
 	return e.ReadTimeout
 }
 
 func (e *ServerCfg) GetWriteTimeout() int {
 	if e.WriteTimeout < 1 {
-		return 20
+		e.WriteTimeout = 20
 	}
 	return e.WriteTimeout
 }
@@ -106,7 +107,7 @@ type RemoteCfg struct {
 
 func (e *RemoteCfg) GetConfigType() string {
 	if e.ConfigType == "" {
-		return "yaml"
+		e.ConfigType = "yaml"
 	}
 	return e.ConfigType
 }

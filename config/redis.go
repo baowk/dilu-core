@@ -11,7 +11,7 @@ type CacheCfg struct {
 
 func (c *CacheCfg) GetType() string {
 	if c.Type == "" {
-		return "memory"
+		c.Type = "memory"
 	}
 	return c.Type
 }

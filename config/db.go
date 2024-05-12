@@ -70,21 +70,21 @@ func GetLogMode(logmode string) logger.LogLevel {
 
 func (c *DBCfg) GetMaxIdleConns() int {
 	if c.MaxIdleConns < 1 {
-		return 10
+		c.MaxIdleConns = 10
 	}
 	return c.MaxIdleConns
 }
 
 func (c *DBCfg) GetMaxOpenConns() int {
 	if c.MaxOpenConns < 1 {
-		return 30
+		c.MaxOpenConns = 30
 	}
 	return c.MaxOpenConns
 }
 
 func (c *DBCfg) GetMaxLifetime() int {
 	if c.MaxLifetime < 1 {
-		return 120
+		c.MaxLifetime = 120
 	}
 	return c.MaxLifetime
 }
