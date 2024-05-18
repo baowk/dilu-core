@@ -90,13 +90,13 @@ func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxI
 		err = errors.New("db err")
 	}
 	if err != nil {
-		slog.Error("connect db err ", "dns", dns, "key", key, err)
+		slog.Error("connect db err ", "dns", dns, "key", key, "err", err)
 		panic(err)
 	}
 	var sqlDB *sql.DB
 	sqlDB, err = db.DB()
 	if err != nil {
-		slog.Error("connect db err ", "dns", dns, "key", key, err)
+		slog.Error("connect db err ", "dns", dns, "key", key, "err", err)
 		panic(err)
 	}
 	sqlDB.SetMaxIdleConns(maxIdle)
@@ -145,7 +145,7 @@ func Db(name string) *gorm.DB {
 	lock.RLock()
 	defer lock.RUnlock()
 	if db, ok := dbs[name]; !ok || db == nil {
-		slog.Error("db init err", errors.New(name))
+		slog.Error("db init err", "err", errors.New(name))
 		panic("db not init")
 	} else {
 		return db
