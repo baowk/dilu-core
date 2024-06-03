@@ -165,7 +165,7 @@ func logInit() io.Writer {
 	}
 
 	if Cfg.Logger.Level == "error" {
-		opts.Level = slog.LevelDebug
+		opts.Level = slog.LevelError
 	} else if Cfg.Logger.Level == "info" {
 		opts.Level = slog.LevelInfo
 	} else if Cfg.Logger.Level == "warn" {
