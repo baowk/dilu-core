@@ -4,6 +4,8 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,4 +39,20 @@ func CompPwd(hashPwd, srcPwd string) bool {
 		return false
 	}
 	return true
+}
+
+/*
+获取文件的MD5
+*/
+func MD5File(filename string) string {
+	f, err := os.Open(filename)
+	if err != nil {
+		//fmt.Fprintf(os.Stderr, "dup2: %v\n", err)
+		return ""
+	}
+	md5 := md5.New()
+	io.Copy(md5, f)
+	MD5Str := hex.EncodeToString(md5.Sum(nil))
+	f.Close()
+	return MD5Str
 }
