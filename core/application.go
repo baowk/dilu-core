@@ -137,7 +137,7 @@ func logInit() io.Writer {
 	// Log = zapInit()
 	// zap.ReplaceGlobals(Log)
 	opts := slog.HandlerOptions{
-		AddSource: true,
+		AddSource: Cfg.Logger.ShowLine,
 		Level:     slog.LevelDebug,
 	}
 	var logW io.Writer
