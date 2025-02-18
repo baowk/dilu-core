@@ -2,6 +2,7 @@ package cache
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -43,7 +44,7 @@ func (m *Memory) getItem(key string) (*item, error) {
 	var err error
 	i, ok := m.items.Load(key)
 	if !ok {
-		return nil, nil
+		return nil, errors.New("not exist")
 	}
 	switch i.(type) {
 	case *item:
@@ -52,7 +53,7 @@ func (m *Memory) getItem(key string) (*item, error) {
 			//过期
 			_ = m.del(key)
 			//过期后删除
-			return nil, nil
+			return nil, errors.New("not exist")
 		}
 		return item, nil
 	default:
@@ -76,6 +77,13 @@ func (m *Memory) Set(key string, val interface{}, expiration time.Duration) erro
 		Expired: time.Now().Add(expiration),
 	}
 	return m.setItem(key, item)
+}
+
+func (m *Memory) SetNX(key string, val interface{}, expiration time.Duration) error {
+	if m.Exists(key) {
+		return errors.New("key exist")
+	}
+	return m.Set(key, val, expiration)
 }
 
 func (m *Memory) setItem(key string, item *item) error {
@@ -147,6 +155,14 @@ func (m *Memory) Expire(key string, dur time.Duration) error {
 	}
 	item.Expired = time.Now().Add(dur)
 	return m.setItem(key, item)
+}
+
+func (m *Memory) Exists(key string) bool {
+	_, err := m.getItem(key)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (m *Memory) GetClient() *Memory {

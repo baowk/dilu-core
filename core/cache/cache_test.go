@@ -84,3 +84,21 @@ func TestC(t *testing.T) {
 	// }
 
 }
+
+func TestD(t *testing.T) {
+	idx := 0
+
+	if err := memCache.Set(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute); err != nil {
+		t.Errorf("The values of is not %v\n", err)
+	}
+
+	if err := memCache.SetNX(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute); err != nil {
+		t.Errorf("The values of is not %v\n", err)
+	}
+	str, err := memCache.Get(testGroup[idx].key)
+	if err != nil {
+		t.Errorf("The values of is not %v\n", err)
+	}
+
+	fmt.Printf("res:%v", str)
+}

@@ -33,6 +33,13 @@ func (c *RedisCache) Set(key string, val any, expiration time.Duration) error {
 	return c.redis.Set(context.TODO(), key, val, expiration).Err()
 }
 
+func (c *RedisCache) SetNX(key string, val any, expiration time.Duration) error {
+	if c.prefix != "" {
+		key = c.prefix + ":" + key
+	}
+	return c.redis.SetNX(context.TODO(), key, val, expiration).Err()
+}
+
 func (c *RedisCache) Del(key string) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
@@ -58,16 +65,14 @@ func (c *RedisCache) Incr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	icmd := c.redis.Incr(context.TODO(), key)
-	return icmd.Val(), icmd.Err()
+	return c.redis.Incr(context.TODO(), key).Result()
 }
 
 func (c *RedisCache) Decr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	icmd := c.redis.Decr(context.TODO(), key)
-	return icmd.Val(), icmd.Err()
+	return c.redis.Decr(context.TODO(), key).Result()
 }
 
 func (c *RedisCache) Expire(key string, expiration time.Duration) error {
@@ -75,6 +80,18 @@ func (c *RedisCache) Expire(key string, expiration time.Duration) error {
 		key = c.prefix + ":" + key
 	}
 	return c.redis.Expire(context.TODO(), key, expiration).Err()
+}
+
+func (c *RedisCache) Exists(key string) bool {
+	if c.prefix != "" {
+		key = c.prefix + ":" + key
+	}
+	exists, err := c.redis.Exists(context.TODO(), key).Result()
+	if err != nil {
+		return false
+	} else {
+		return exists > 0
+	}
 }
 
 func (c *RedisCache) GetClient() redis.UniversalClient {
