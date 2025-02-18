@@ -104,34 +104,34 @@ func (m *Memory) HDel(hk, key string) error {
 	return m.del(hk + key)
 }
 
-func (m *Memory) Incr(key string) error {
+func (m *Memory) Incr(key string) (int64, error) {
 	return m.calculate(key, 1)
 }
 
-func (m *Memory) Decr(key string) error {
+func (m *Memory) Decr(key string) (int64, error) {
 	return m.calculate(key, -1)
 }
 
-func (m *Memory) calculate(key string, num int) error {
+func (m *Memory) calculate(key string, num int64) (int64, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 	item, err := m.getItem(key)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if item == nil {
 		err = fmt.Errorf("%s not exist", key)
-		return err
+		return 0, err
 	}
-	var n int
-	n, err = cast.ToIntE(item.Value)
+	var n int64
+	n, err = cast.ToInt64E(item.Value)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	n += num
-	item.Value = strconv.Itoa(n)
-	return m.setItem(key, item)
+	item.Value = strconv.FormatInt(n, 10)
+	return n, m.setItem(key, item)
 }
 
 func (m *Memory) Expire(key string, dur time.Duration) error {

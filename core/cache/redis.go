@@ -54,18 +54,20 @@ func (c *RedisCache) HDel(hk, fields string) error {
 	return c.redis.HDel(context.TODO(), hk, fields).Err()
 }
 
-func (c *RedisCache) Incr(key string) error {
+func (c *RedisCache) Incr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Incr(context.TODO(), key).Err()
+	icmd := c.redis.Incr(context.TODO(), key)
+	return icmd.Val(), icmd.Err()
 }
 
-func (c *RedisCache) Decr(key string) error {
+func (c *RedisCache) Decr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Decr(context.TODO(), key).Err()
+	icmd := c.redis.Decr(context.TODO(), key)
+	return icmd.Val(), icmd.Err()
 }
 
 func (c *RedisCache) Expire(key string, expiration time.Duration) error {

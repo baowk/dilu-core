@@ -17,8 +17,8 @@ type ICache interface {
 	Del(key string) error
 	HGet(hk, field string) (string, error)
 	HDel(hk, fields string) error
-	Incr(key string) error
-	Decr(key string) error
+	Incr(key string) (int64, error)
+	Decr(key string) (int64, error)
 	Expire(key string, expiration time.Duration) error
 }
 
