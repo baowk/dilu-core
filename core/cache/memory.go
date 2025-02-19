@@ -161,7 +161,7 @@ func (m *Memory) Exists(key string) bool {
 	return err != nil
 }
 
-func (m *Memory) MGet(keys ...string) (any, error) {
+func (m *Memory) MGet(keys ...string) ([]any, error) {
 	var values []any
 	for _, key := range keys {
 		item, err := m.getItem(key)

@@ -95,7 +95,7 @@ func (c *RedisCache) Exists(key string) bool {
 	}
 }
 
-func (c *RedisCache) MGet(keys ...string) (any, error) {
+func (c *RedisCache) MGet(keys ...string) ([]any, error) {
 	if c.prefix != "" {
 		for i, key := range keys {
 			keys[i] = c.prefix + ":" + key

@@ -124,7 +124,7 @@ func TestE(t *testing.T) {
 		return
 	}
 
-	for i, v := range results.([]interface{}) {
+	for i, v := range results {
 		fmt.Printf("res[%s]:%v\n", keys[i], v)
 	}
 
