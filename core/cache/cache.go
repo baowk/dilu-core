@@ -12,16 +12,18 @@ import (
 
 type ICache interface {
 	Type() string
-	Get(key string) (string, error)
+	Get(key string) (any, error)
 	Set(key string, val any, expiration time.Duration) error
 	SetNX(key string, val any, expiration time.Duration) error
 	Del(key string) error
-	HGet(hk, field string) (string, error)
+	HGet(hk, field string) (any, error)
 	HDel(hk, fields string) error
 	Incr(key string) (int64, error)
 	Decr(key string) (int64, error)
 	Expire(key string, expiration time.Duration) error
 	Exists(key string) bool
+	MGet(keys ...string) (any, error)
+	MSet(pairs map[string]any) error
 }
 
 func New(conf config.CacheCfg) ICache {

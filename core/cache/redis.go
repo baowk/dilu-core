@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -19,7 +20,7 @@ func (c *RedisCache) Type() string {
 	return "redis"
 }
 
-func (c *RedisCache) Get(key string) (string, error) {
+func (c *RedisCache) Get(key string) (any, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
@@ -47,7 +48,7 @@ func (c *RedisCache) Del(key string) error {
 	return c.redis.Del(context.TODO(), key).Err()
 }
 
-func (c *RedisCache) HGet(hk, field string) (string, error) {
+func (c *RedisCache) HGet(hk, field string) (any, error) {
 	if c.prefix != "" {
 		hk = c.prefix + ":" + hk
 	}
@@ -94,6 +95,31 @@ func (c *RedisCache) Exists(key string) bool {
 	}
 }
 
+func (c *RedisCache) MGet(keys ...string) (any, error) {
+	if c.prefix != "" {
+		for i, key := range keys {
+			keys[i] = c.prefix + ":" + key
+		}
+	}
+	return c.redis.MGet(context.TODO(), keys...).Result()
+}
+
+func (c *RedisCache) MSet(pairs map[string]any) error {
+	if c.prefix != "" {
+		for i, key := range pairs {
+			pairs[i] = c.prefix + ":" + key.(string)
+		}
+	}
+	return c.redis.MSet(context.TODO(), pairs).Err()
+}
+
 func (c *RedisCache) GetClient() redis.UniversalClient {
 	return c.redis
+}
+
+func GetRedisClient(c ICache) (redis.UniversalClient, error) {
+	if c != nil && c.Type() == "redis" {
+		return c.(*RedisCache).redis, nil
+	}
+	return nil, errors.ErrUnsupported
 }

@@ -1,9 +1,7 @@
 package cache
 
 import (
-	"encoding/json"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 )
@@ -14,6 +12,7 @@ var redisCache ICache
 func init() {
 	memCache = NewMemory()
 	m["aaa"] = 1
+	m["bbb"] = 2
 }
 
 type testCase struct {
@@ -60,7 +59,8 @@ func TestB(t *testing.T) {
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
-	d, _ := strconv.Atoi(str)
+	d, _ := str.(int)
+	fmt.Printf("%v", d)
 	if d != testGroup[idx].val {
 		t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].val)
 	}
@@ -74,10 +74,12 @@ func TestC(t *testing.T) {
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
-	d := make(map[string]int, 0)
-	json.Unmarshal([]byte(str), &d)
 
-	fmt.Printf("%v", d)
+	m := str.(map[string]int)
+	// d := make(map[string]int, 0)
+	// json.Unmarshal([]byte(str), &d)
+
+	fmt.Printf("%v", m)
 
 	// if d != testGroup[idx].val {
 	// 	t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].val)
@@ -101,4 +103,42 @@ func TestD(t *testing.T) {
 	}
 
 	fmt.Printf("res:%v", str)
+}
+
+func TestE(t *testing.T) {
+	pairs := make(map[string]any, 0)
+	keys := make([]string, 0)
+	for _, v := range testGroup {
+		pairs[v.key] = v.val
+		keys = append(keys, v.key)
+	}
+
+	if err := memCache.MSet(pairs); err != nil {
+		t.Errorf("Error setting multiple values: %v", err)
+		return
+	}
+
+	results, err := memCache.MGet(keys...)
+	if err != nil {
+		t.Errorf("Error retrieving multiple values: %v", err)
+		return
+	}
+
+	for i, v := range results.([]interface{}) {
+		fmt.Printf("res[%s]:%v\n", keys[i], v)
+	}
+
+	m, err := GetMemoryClient(memCache)
+	if err != nil {
+		t.Errorf("Error getting memory client: %v", err)
+		return
+	}
+
+	str, err := m.Get(testGroup[0].key)
+	if err != nil {
+		t.Errorf("Error retrieving value: %v", err)
+		return
+	}
+
+	fmt.Printf("res:%v\n", str)
 }

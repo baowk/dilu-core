@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -12,7 +11,7 @@ import (
 )
 
 type item struct {
-	Value   string
+	Value   any
 	Expired time.Time
 }
 
@@ -32,7 +31,7 @@ func (*Memory) Type() string {
 	return "memory"
 }
 
-func (m *Memory) Get(key string) (string, error) {
+func (m *Memory) Get(key string) (any, error) {
 	item, err := m.getItem(key)
 	if err != nil || item == nil {
 		return "", err
@@ -63,17 +62,17 @@ func (m *Memory) getItem(key string) (*item, error) {
 }
 
 func (m *Memory) Set(key string, val interface{}, expiration time.Duration) error {
-	s, err := cast.ToStringE(val)
-	if err != nil {
-		bs, err := json.Marshal(val)
-		if err != nil {
-			fmt.Println(err.Error())
-			return err
-		}
-		s = string(bs)
-	}
+	// s, err := cast.ToStringE(val)
+	// if err != nil {
+	// 	bs, err := json.Marshal(val)
+	// 	if err != nil {
+	// 		fmt.Println(err.Error())
+	// 		return err
+	// 	}
+	// 	s = string(bs)
+	// }
 	item := &item{
-		Value:   s,
+		Value:   val,
 		Expired: time.Now().Add(expiration),
 	}
 	return m.setItem(key, item)
@@ -100,7 +99,7 @@ func (m *Memory) del(key string) error {
 	return nil
 }
 
-func (m *Memory) HGet(hk, key string) (string, error) {
+func (m *Memory) HGet(hk, key string) (any, error) {
 	item, err := m.getItem(hk + key)
 	if err != nil || item == nil {
 		return "", err
@@ -159,12 +158,43 @@ func (m *Memory) Expire(key string, dur time.Duration) error {
 
 func (m *Memory) Exists(key string) bool {
 	_, err := m.getItem(key)
-	if err != nil {
-		return false
+	return err != nil
+}
+
+func (m *Memory) MGet(keys ...string) (any, error) {
+	var values []any
+	for _, key := range keys {
+		item, err := m.getItem(key)
+		if err != nil {
+			return nil, err
+		}
+		if item == nil {
+			err = fmt.Errorf("%s not exist", key)
+			return nil, err
+		}
+		values = append(values, item.Value)
 	}
-	return true
+	return values, nil
+}
+
+func (m *Memory) MSet(pairs map[string]any) error {
+	for key, v := range pairs {
+		item := &item{
+			Value:   v, // 直接存储 value，不进行类型断言
+			Expired: time.Now().Add(time.Hour * 24 * 365),
+		}
+		m.items.Store(key, item)
+	}
+	return nil
 }
 
 func (m *Memory) GetClient() *Memory {
 	return m
+}
+
+func GetMemoryClient(c ICache) (*Memory, error) {
+	if c != nil && c.Type() == "memory" {
+		return c.(*Memory), nil
+	}
+	return nil, errors.ErrUnsupported
 }
