@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 type item struct {
-	Value   any
+	Value   string
 	Expired time.Time
 }
 
@@ -31,7 +32,11 @@ func (*Memory) Type() string {
 	return "memory"
 }
 
-func (m *Memory) Get(key string) (any, error) {
+func (m *Memory) RealKey(key string) string {
+	return key
+}
+
+func (m *Memory) Get(key string) (string, error) {
 	item, err := m.getItem(key)
 	if err != nil || item == nil {
 		return "", err
@@ -62,17 +67,17 @@ func (m *Memory) getItem(key string) (*item, error) {
 }
 
 func (m *Memory) Set(key string, val interface{}, expiration time.Duration) error {
-	// s, err := cast.ToStringE(val)
-	// if err != nil {
-	// 	bs, err := json.Marshal(val)
-	// 	if err != nil {
-	// 		fmt.Println(err.Error())
-	// 		return err
-	// 	}
-	// 	s = string(bs)
-	// }
+	s, err := cast.ToStringE(val)
+	if err != nil {
+		bs, err := json.Marshal(val)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		s = string(bs)
+	}
 	item := &item{
-		Value:   val,
+		Value:   s,
 		Expired: time.Now().Add(expiration),
 	}
 	return m.setItem(key, item)
@@ -179,11 +184,12 @@ func (m *Memory) MGet(keys ...string) ([]any, error) {
 
 func (m *Memory) MSet(pairs map[string]any) error {
 	for key, v := range pairs {
-		item := &item{
-			Value:   v, // 直接存储 value，不进行类型断言
-			Expired: time.Now().Add(time.Hour * 24 * 365),
-		}
-		m.items.Store(key, item)
+		// item := &item{
+		// 	Value:   v, // 直接存储 value，不进行类型断言
+		// 	Expired: time.Now().Add(time.Hour * 24 * 365),
+		// }
+		// m.items.Store(key, item)
+		m.Set(key, v, time.Hour*24*365)
 	}
 	return nil
 }

@@ -20,7 +20,14 @@ func (c *RedisCache) Type() string {
 	return "redis"
 }
 
-func (c *RedisCache) Get(key string) (any, error) {
+func (c *RedisCache) RealKey(key string) string {
+	if c.prefix != "" {
+		key = c.prefix + ":" + key
+	}
+	return key
+}
+
+func (c *RedisCache) Get(key string) (string, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}

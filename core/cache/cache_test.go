@@ -1,88 +1,171 @@
 package cache
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
+
+	"github.com/baowk/dilu-core/config"
 )
 
 var memCache ICache
 var redisCache ICache
 
-func init() {
-	memCache = NewMemory()
-	m["aaa"] = 1
-	m["bbb"] = 2
-}
-
 type testCase struct {
-	key string
-	val any
+	Key string `json:"key"`
+	Val any    `json:"val"`
 }
 
 var m = make(map[string]int, 0)
 
 var testGroup = []testCase{
 	testCase{
-		key: "test1",
-		val: "test",
+		Key: "test1",
+		Val: "test",
 	},
 
 	testCase{
-		key: "test2",
-		val: 1,
+		Key: "test2",
+		Val: 1,
 	},
 
 	testCase{
-		key: "test3",
-		val: m,
+		Key: "test3",
+		Val: m,
 	},
+}
+
+func init() {
+	memCache = New(config.CacheCfg{Type: "memory"})
+
+	redisCache = New(config.CacheCfg{
+		Addr:       "10.0.128.223:6379",
+		DB:         0,
+		MasterName: "",
+		Password:   "",
+		Prefix:     "test:",
+		Type:       "redis",
+	})
+	m["aaa"] = 1
+	m["bbb"] = 2
+
+}
+
+func TestRedisGS(t *testing.T) {
+	tc := testCase{
+		Key: "aaa",
+		Val: 1,
+	}
+	data, _ := json.Marshal(tc)
+	key := "aaa"
+	fmt.Println("set", string(data))
+
+	if err := redisCache.Set(key, data, time.Minute*10); err != nil {
+		t.Error(err)
+	}
+	if val, err := redisCache.Get(key); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Printf("get:%v\n", val)
+		var tc2 testCase
+		//d2, _ := json.Marshal(val)
+		if err := json.Unmarshal([]byte(val), &tc2); err != nil {
+			t.Error(err)
+		}
+		fmt.Printf("%+v,%d,%d", tc2, tc.Val, tc2.Val)
+		if tc.Key != tc2.Key {
+			t.Error("redis get error")
+		}
+	}
+}
+
+func TestGetRedis(t *testing.T) {
+	c, err := GetRedisClient(redisCache)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if c == nil {
+		t.Error("redis get error")
+	}
+	key := "aaa"
+
+	str1, err1 := redisCache.Get(key)
+	if err1 != nil {
+		t.Error(err1)
+	} else {
+		fmt.Printf("get:%v\n", str1)
+	}
+	tc := testCase{
+		Key: "aaa2",
+		Val: 2,
+	}
+	data, _ := json.Marshal(tc)
+
+	c.Set(context.Background(), redisCache.RealKey(key), data, 5*time.Minute)
+
+	str, err := c.Get(context.Background(), redisCache.RealKey(key)).Result()
+	if err != nil {
+		t.Error(err)
+	} else {
+		fmt.Printf("get:%v\n", str)
+	}
+
+	str1, err1 = redisCache.Get(key)
+	if err1 != nil {
+		t.Error(err1)
+	} else {
+		fmt.Printf("get:%v\n", str1)
+	}
 }
 
 func TestA(t *testing.T) {
 	idx := 0
-	memCache.Set(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute)
-	str, err := memCache.Get(testGroup[idx].key)
+	memCache.Set(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute)
+	str, err := memCache.Get(testGroup[idx].Key)
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
-	if str != testGroup[idx].val {
-		t.Errorf("The values of is not %v,%v \n", str, testGroup[idx].val)
+	if str != testGroup[idx].Val {
+		t.Errorf("The values of is not %v,%v \n", str, testGroup[idx].Val)
 	}
 
 }
 
 func TestB(t *testing.T) {
 	idx := 1
-	memCache.Set(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute)
-	str, err := memCache.Get(testGroup[idx].key)
+	memCache.Set(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute)
+	str, err := memCache.Get(testGroup[idx].Key)
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
-	d, _ := str.(int)
+	d, _ := strconv.Atoi(str)
 	fmt.Printf("%v", d)
-	if d != testGroup[idx].val {
-		t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].val)
+	if d != testGroup[idx].Val {
+		t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].Val)
 	}
 
 }
 
 func TestC(t *testing.T) {
 	idx := 2
-	memCache.Set(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute)
-	str, err := memCache.Get(testGroup[idx].key)
+	memCache.Set(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute)
+	str, err := memCache.Get(testGroup[idx].Key)
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
 
-	m := str.(map[string]int)
-	// d := make(map[string]int, 0)
-	// json.Unmarshal([]byte(str), &d)
+	//m := str.(map[string]int)
+	d := make(map[string]int, 0)
+	json.Unmarshal([]byte(str), &d)
 
 	fmt.Printf("%v", m)
 
-	// if d != testGroup[idx].val {
-	// 	t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].val)
+	// if d != testGroup[idx].Val {
+	// 	t.Errorf("The values of is not %v,%v \n", d, testGroup[idx].Val)
 	// }
 
 }
@@ -90,14 +173,14 @@ func TestC(t *testing.T) {
 func TestD(t *testing.T) {
 	idx := 0
 
-	if err := memCache.Set(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute); err != nil {
+	if err := memCache.Set(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute); err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
 
-	if err := memCache.SetNX(testGroup[idx].key, testGroup[idx].val, time.Duration(5)*time.Minute); err != nil {
+	if err := memCache.SetNX(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute); err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
-	str, err := memCache.Get(testGroup[idx].key)
+	str, err := memCache.Get(testGroup[idx].Key)
 	if err != nil {
 		t.Errorf("The values of is not %v\n", err)
 	}
@@ -109,8 +192,8 @@ func TestE(t *testing.T) {
 	pairs := make(map[string]any, 0)
 	keys := make([]string, 0)
 	for _, v := range testGroup {
-		pairs[v.key] = v.val
-		keys = append(keys, v.key)
+		pairs[v.Key] = v.Val
+		keys = append(keys, v.Key)
 	}
 
 	if err := memCache.MSet(pairs); err != nil {
@@ -134,7 +217,7 @@ func TestE(t *testing.T) {
 		return
 	}
 
-	str, err := m.Get(testGroup[0].key)
+	str, err := m.Get(testGroup[0].Key)
 	if err != nil {
 		t.Errorf("Error retrieving value: %v", err)
 		return

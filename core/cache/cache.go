@@ -12,7 +12,7 @@ import (
 
 type ICache interface {
 	Type() string
-	Get(key string) (any, error)
+	Get(key string) (string, error)
 	Set(key string, val any, expiration time.Duration) error
 	SetNX(key string, val any, expiration time.Duration) error
 	Del(key string) error
@@ -24,6 +24,7 @@ type ICache interface {
 	Exists(key string) bool
 	MGet(keys ...string) ([]any, error)
 	MSet(pairs map[string]any) error
+	RealKey(key string) string
 }
 
 func New(conf config.CacheCfg) ICache {
