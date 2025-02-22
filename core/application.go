@@ -18,8 +18,8 @@ import (
 	"github.com/baowk/dilu-core/core/cache"
 	"github.com/baowk/dilu-core/core/locker"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 	"github.com/natefinch/lumberjack"
+	"github.com/redis/go-redis/v9"
 
 	// "go.uber.org/zap"
 	// "go.uber.org/zap/zapcore"
