@@ -18,6 +18,7 @@ import (
 	"github.com/baowk/dilu-core/core/cache"
 	"github.com/baowk/dilu-core/core/locker"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/natefinch/lumberjack"
 
 	// "go.uber.org/zap"
@@ -178,6 +179,10 @@ func logInit() io.Writer {
 	}
 	slog.SetDefault(Log)
 	return logW
+}
+
+func GetCacheRedis() (redis.UniversalClient, error) {
+	return cache.GetRedisClient(Cache)
 }
 
 // Zap 获取 zap.Logger
