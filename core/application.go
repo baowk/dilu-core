@@ -182,7 +182,7 @@ func logInit() io.Writer {
 }
 
 // 此方法仅用于当前业务使用redis作为缓存的时候
-func GetCacheRedis() (redis.UniversalClient, error) {
+func CacheRedis() (redis.UniversalClient, error) {
 	return cache.GetRedisClient(Cache)
 }
 
