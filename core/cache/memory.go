@@ -161,6 +161,21 @@ func (m *Memory) Expire(key string, dur time.Duration) error {
 	return m.setItem(key, item)
 }
 
+func (m *Memory) ExpireAt(key string, tm time.Time) error {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+	item, err := m.getItem(key)
+	if err != nil {
+		return err
+	}
+	if item == nil {
+		err = fmt.Errorf("%s not exist", key)
+		return err
+	}
+	item.Expired = tm
+	return m.setItem(key, item)
+}
+
 func (m *Memory) Exists(key string) bool {
 	_, err := m.getItem(key)
 	return err != nil

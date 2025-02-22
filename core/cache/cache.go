@@ -21,6 +21,7 @@ type ICache interface {
 	Incr(key string) (int64, error)
 	Decr(key string) (int64, error)
 	Expire(key string, expiration time.Duration) error
+	ExpireAt(key string, t time.Time) error
 	Exists(key string) bool
 	MGet(keys ...string) ([]any, error)
 	MSet(pairs map[string]any) error

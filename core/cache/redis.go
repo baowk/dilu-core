@@ -90,6 +90,13 @@ func (c *RedisCache) Expire(key string, expiration time.Duration) error {
 	return c.redis.Expire(context.TODO(), key, expiration).Err()
 }
 
+func (c *RedisCache) ExpireAt(key string, tm time.Time) error {
+	if c.prefix != "" {
+		key = c.prefix + ":" + key
+	}
+	return c.redis.ExpireAt(context.TODO(), key, tm).Err()
+}
+
 func (c *RedisCache) Exists(key string) bool {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
