@@ -103,6 +103,7 @@ func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxI
 	sqlDB.SetMaxOpenConns(maxOpen)
 	sqlDB.SetConnMaxLifetime(time.Minute * time.Duration(maxLifetime))
 	SetDb(key, db)
+	dbInitFlag = true
 }
 
 func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, singular, color, ignoreNotFound bool, logW io.Writer) *gorm.Config {
@@ -129,8 +130,8 @@ func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, si
 }
 
 func SetDb(key string, db *gorm.DB) {
-	lock.Lock()
-	defer lock.Unlock()
+	// lock.Lock()
+	// defer lock.Unlock()
 	dbs[key] = db
 }
 
@@ -142,13 +143,20 @@ func Dbs() map[string]*gorm.DB {
 }
 
 func Db(name string) *gorm.DB {
-	lock.RLock()
-	defer lock.RUnlock()
-	if db, ok := dbs[name]; !ok || db == nil {
-		slog.Error("db init err", "err", errors.New(name))
-		panic("db not init")
+	// lock.RLock()
+	// defer lock.RUnlock()
+	if dbInitFlag {
+		if len(dbs) == 1 {
+			return dbs[consts.DB_DEF]
+		}
+		if db, ok := dbs[name]; !ok || db == nil {
+			slog.Error("db init err", "err", errors.New(name))
+			panic("db not init")
+		} else {
+			return db
+		}
 	} else {
-		return db
+		return nil
 	}
 }
 

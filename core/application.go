@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"os"
-	"sync"
 
 	"github.com/baowk/dilu-core/common/utils/ips"
 	"github.com/baowk/dilu-core/common/utils/text"
@@ -29,15 +28,16 @@ import (
 )
 
 var (
-	Cfg       config.AppCfg
-	Log       *slog.Logger //*zap.Logger
-	Cache     cache.ICache
-	lock      sync.RWMutex
-	engine    http.Handler
-	dbs       = make(map[string]*gorm.DB, 0)
-	RedisLock *locker.Redis
-	Started   = make(chan byte, 1)
-	ToClose   = make(chan byte, 1)
+	Cfg        config.AppCfg
+	Log        *slog.Logger //*zap.Logger
+	Cache      cache.ICache
+	dbInitFlag bool // 数据库是否初始化
+	engine     http.Handler
+	dbs        = make(map[string]*gorm.DB, 0)
+	RedisLock  *locker.Redis
+	Started    = make(chan byte, 1)
+	ToClose    = make(chan byte, 1)
+	//lock      sync.RWMutex
 )
 
 func GetEngine() http.Handler {
@@ -53,8 +53,8 @@ func GetGinEngine() *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	var r *gin.Engine
-	lock.RLock()
-	defer lock.RUnlock()
+	// lock.RLock()
+	// defer lock.RUnlock()
 	if engine == nil {
 		engine = gin.New()
 	}
