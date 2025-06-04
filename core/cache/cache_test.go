@@ -19,6 +19,64 @@ type testCase struct {
 	Val any    `json:"val"`
 }
 
+func (i testCase) MarshalBinary() ([]byte, error) {
+	return json.Marshal(i)
+}
+
+func (tc *testCase) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, tc)
+}
+
+type testCase2 struct {
+	Key string `json:"key"`
+	Val int    `json:"val"`
+}
+
+func (i testCase2) MarshalBinary() ([]byte, error) {
+	return json.Marshal(i)
+}
+
+func (tc *testCase2) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, tc)
+}
+
+func TestRedisGS2(t *testing.T) {
+	tc := testCase2{
+		Key: "aaa",
+		Val: 1,
+	}
+	//data, _ := json.Marshal(tc)
+	key := "aaa"
+	//fmt.Println("set", string(data))
+
+	if err := redisCache.Set(key, tc, time.Minute*10); err != nil {
+		t.Error(err)
+	}
+	if val, err := redisCache.Get(key); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Printf("get:%v\n", val)
+
+		var tc2 testCase2
+		err := tc2.UnmarshalBinary([]byte(val))
+		if err != nil {
+			t.Error(err)
+		}
+
+		fmt.Printf("get:%+v\n", tc2)
+
+		// var tc2 testCase2
+		// //d2, _ := json.Marshal(val)
+		// if err := json.Unmarshal([]byte(val), &tc2); err != nil {
+		// 	t.Error(err)
+		// }
+		// fmt.Printf("%+v,%d,%d", tc2, tc.Val, tc2.Val)
+		// if tc.Key != tc2.Key {
+		// 	t.Error("redis get error")
+		// }
+	}
+}
+
 var m = make(map[string]int, 0)
 
 var testGroup = []testCase{
@@ -42,7 +100,7 @@ func init() {
 	memCache = New(config.CacheCfg{Type: "memory"})
 
 	redisCache = New(config.CacheCfg{
-		Addr:       "10.0.128.223:6379",
+		Addr:       "127.0.0.1:6379",
 		DB:         0,
 		MasterName: "",
 		Password:   "",
@@ -59,11 +117,11 @@ func TestRedisGS(t *testing.T) {
 		Key: "aaa",
 		Val: 1,
 	}
-	data, _ := json.Marshal(tc)
+	//data, _ := json.Marshal(tc)
 	key := "aaa"
-	fmt.Println("set", string(data))
+	//fmt.Println("set", string(data))
 
-	if err := redisCache.Set(key, data, time.Minute*10); err != nil {
+	if err := redisCache.Set(key, tc, time.Minute*10); err != nil {
 		t.Error(err)
 	}
 	if val, err := redisCache.Get(key); err != nil {
