@@ -2,10 +2,13 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/spf13/cast"
 )
 
 type RedisCache struct {
@@ -38,14 +41,36 @@ func (c *RedisCache) Set(key string, val any, expiration time.Duration) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Set(context.TODO(), key, val, expiration).Err()
+
+	s, err := cast.ToStringE(val)
+	if err != nil {
+		bs, err := json.Marshal(val)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		s = string(bs)
+	}
+
+	return c.redis.Set(context.TODO(), key, s, expiration).Err()
 }
 
 func (c *RedisCache) SetNX(key string, val any, expiration time.Duration) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.SetNX(context.TODO(), key, val, expiration).Err()
+
+	s, err := cast.ToStringE(val)
+	if err != nil {
+		bs, err := json.Marshal(val)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		s = string(bs)
+	}
+
+	return c.redis.SetNX(context.TODO(), key, s, expiration).Err()
 }
 
 func (c *RedisCache) Del(key string) error {

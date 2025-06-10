@@ -40,6 +40,28 @@ func (tc *testCase2) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, tc)
 }
 
+func TestString(t *testing.T) {
+	if err := redisCache.Set("test", "tst", time.Minute*10); err != nil {
+		t.Error(err)
+	}
+
+	if err := redisCache.Set("test1", 123, time.Minute*10); err != nil {
+		t.Error(err)
+	}
+
+	if test, err := redisCache.Get("test"); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Printf("get:%v\n", test)
+	}
+
+	if test1, err := redisCache.Get("test1"); err != nil {
+		t.Error(err)
+	} else {
+		fmt.Printf("get:%v\n", test1)
+	}
+}
+
 func TestRedisGS2(t *testing.T) {
 	tc := testCase2{
 		Key: "aaa",
