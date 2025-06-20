@@ -16,6 +16,7 @@ import (
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
 	"github.com/baowk/dilu-core/core/locker"
+	"github.com/baowk/dilu-core/core/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/natefinch/lumberjack"
 	"github.com/redis/go-redis/v9"
@@ -58,9 +59,9 @@ func GetGinEngine() *gin.Engine {
 	if engine == nil {
 		engine = gin.New()
 	}
-	switch engine.(type) {
+	switch engine := engine.(type) {
 	case *gin.Engine:
-		r = engine.(*gin.Engine)
+		r = engine
 	default:
 		log.Fatal("not support other engine")
 		os.Exit(-1)
@@ -69,13 +70,13 @@ func GetGinEngine() *gin.Engine {
 }
 
 func Init() {
-	logWrite := logInit()
+	logger.InitLogger(Cfg)
 	Cache = cache.New(Cfg.Cache)
 	if Cache.Type() == "redis" {
 		r := Cache.(*cache.RedisCache)
 		RedisLock = locker.NewRedis(r.GetClient())
 	}
-	dbInit(logWrite)
+	dbInit()
 }
 
 func Run() {
