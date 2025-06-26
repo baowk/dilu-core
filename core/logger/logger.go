@@ -9,12 +9,12 @@ import (
 	"github.com/natefinch/lumberjack"
 )
 
-func InitLogger(cfg config.AppCfg) {
+func InitLogger(logC config.LogCfg) *slog.Logger {
 	opts := slog.HandlerOptions{
-		AddSource: cfg.Logger.ShowLine,
+		AddSource: logC.ShowLine,
 		Level:     slog.LevelDebug,
 	}
-	switch cfg.Logger.Level {
+	switch logC.Level {
 	case "error":
 		opts.Level = slog.LevelError
 	case "info":
@@ -34,21 +34,28 @@ func InitLogger(cfg config.AppCfg) {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: cfg.Logger.Director + "/debug.log",
+			Filename: logC.Director + "/debug.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
 			// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-			MaxSize: cfg.Logger.GetMaxSize(),
+			MaxSize: logC.GetMaxSize(),
 			// 旧日志保存的最大天数，默认保存所有旧日志文件
-			MaxAge: cfg.Logger.GetMaxAge(),
+			MaxAge: logC.GetMaxAge(),
 			// 旧日志保存的最大数量，默认保存所有旧日志文件
-			MaxBackups: cfg.Logger.GetMaxBackups(),
+			MaxBackups: logC.GetMaxBackups(),
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		debugHandler := slog.NewJSONHandler(debugFile, &opts)
-		levelHandler.AddHandler(slog.LevelDebug, debugHandler)
+		if logC.Format == "json" {
+			debugHandler := slog.NewJSONHandler(debugFile, &opts)
+			levelHandler.AddHandler(slog.LevelDebug, debugHandler)
+		} else {
+			debugHandler := slog.NewTextHandler(debugFile, &opts)
+			levelHandler.AddHandler(slog.LevelDebug, debugHandler)
+		}
+		// debugHandler := slog.NewJSONHandler(debugFile, &opts)
+		// levelHandler.AddHandler(slog.LevelDebug, debugHandler)
 	}
 	if opts.Level.Level() <= slog.LevelInfo {
 
@@ -57,21 +64,28 @@ func InitLogger(cfg config.AppCfg) {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: cfg.Logger.Director + "/info.log",
+			Filename: logC.Director + "/info.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
 			// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-			MaxSize: cfg.Logger.GetMaxSize(),
+			MaxSize: logC.GetMaxSize(),
 			// 旧日志保存的最大天数，默认保存所有旧日志文件
-			MaxAge: cfg.Logger.GetMaxAge(),
+			MaxAge: logC.GetMaxAge(),
 			// 旧日志保存的最大数量，默认保存所有旧日志文件
-			MaxBackups: cfg.Logger.GetMaxBackups(),
+			MaxBackups: logC.GetMaxBackups(),
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		infoHandler := slog.NewJSONHandler(infoFile, &opts)
-		levelHandler.AddHandler(slog.LevelInfo, infoHandler)
+		// infoHandler := slog.NewJSONHandler(infoFile, &opts)
+		// levelHandler.AddHandler(slog.LevelInfo, infoHandler)
+		if logC.Format == "json" {
+			infoHandler := slog.NewJSONHandler(infoFile, &opts)
+			levelHandler.AddHandler(slog.LevelInfo, infoHandler)
+		} else {
+			infoHandler := slog.NewTextHandler(infoFile, &opts)
+			levelHandler.AddHandler(slog.LevelInfo, infoHandler)
+		}
 	}
 	if opts.Level.Level() <= slog.LevelWarn {
 
@@ -80,21 +94,28 @@ func InitLogger(cfg config.AppCfg) {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: cfg.Logger.Director + "/warn.log",
+			Filename: logC.Director + "/warn.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
 			// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-			MaxSize: cfg.Logger.GetMaxSize(),
+			MaxSize: logC.GetMaxSize(),
 			// 旧日志保存的最大天数，默认保存所有旧日志文件
-			MaxAge: cfg.Logger.GetMaxAge(),
+			MaxAge: logC.GetMaxAge(),
 			// 旧日志保存的最大数量，默认保存所有旧日志文件
-			MaxBackups: cfg.Logger.GetMaxBackups(),
+			MaxBackups: logC.GetMaxBackups(),
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		warnHandler := slog.NewJSONHandler(warnFile, &opts)
-		levelHandler.AddHandler(slog.LevelWarn, warnHandler)
+		// warnHandler := slog.NewJSONHandler(warnFile, &opts)
+		// levelHandler.AddHandler(slog.LevelWarn, warnHandler)
+		if logC.Format == "json" {
+			warnHandler := slog.NewJSONHandler(warnFile, &opts)
+			levelHandler.AddHandler(slog.LevelWarn, warnHandler)
+		} else {
+			warnHandler := slog.NewTextHandler(warnFile, &opts)
+			levelHandler.AddHandler(slog.LevelWarn, warnHandler)
+		}
 	}
 	if opts.Level.Level() <= slog.LevelError {
 		// 始终创建文件写入器
@@ -102,24 +123,31 @@ func InitLogger(cfg config.AppCfg) {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: cfg.Logger.Director + "/error.log",
+			Filename: logC.Director + "/error.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
 			// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-			MaxSize: cfg.Logger.GetMaxSize(),
+			MaxSize: logC.GetMaxSize(),
 			// 旧日志保存的最大天数，默认保存所有旧日志文件
-			MaxAge: cfg.Logger.GetMaxAge(),
+			MaxAge: logC.GetMaxAge(),
 			// 旧日志保存的最大数量，默认保存所有旧日志文件
-			MaxBackups: cfg.Logger.GetMaxBackups(),
+			MaxBackups: logC.GetMaxBackups(),
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		errorHandler := slog.NewJSONHandler(errorFile, &opts)
-		levelHandler.AddHandler(slog.LevelError, errorHandler)
+		// errorHandler := slog.NewJSONHandler(errorFile, &opts)
+		// levelHandler.AddHandler(slog.LevelError, errorHandler)
+		if logC.Format == "json" {
+			errorHandler := slog.NewJSONHandler(errorFile, &opts)
+			levelHandler.AddHandler(slog.LevelError, errorHandler)
+		} else {
+			errorHandler := slog.NewTextHandler(errorFile, &opts)
+			levelHandler.AddHandler(slog.LevelError, errorHandler)
+		}
 	}
 
-	if cfg.Logger.LogInConsole {
+	if logC.LogInConsole {
 		// 同时输出到文件和控制台
 		consoleHandler := slog.NewTextHandler(os.Stdout, &opts)
 		if opts.Level.Level() == slog.LevelDebug {
@@ -136,7 +164,8 @@ func InitLogger(cfg config.AppCfg) {
 			levelHandler.AddHandler(slog.LevelError, consoleHandler)
 		}
 	}
-
+	clog := slog.New(levelHandler)
 	// 设置默认 logger
-	slog.SetDefault(slog.New(levelHandler))
+	slog.SetDefault(clog)
+	return clog
 }

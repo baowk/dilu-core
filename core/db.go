@@ -44,7 +44,7 @@ func dbInit() {
 
 	var logWrite io.Writer
 
-	if Cfg.DBCfg.LogInConsole {
+	if Cfg.Logger.LogInConsole {
 		// 同时输出到文件和控制台
 		logWrite = io.MultiWriter(fileWriter, os.Stdout)
 	} else {

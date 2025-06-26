@@ -30,10 +30,10 @@ type DBCfg struct {
 	MaxOpenConns   int           `mapstructure:"max-open-conns" json:"max-open-conns" yaml:"max-open-conns"`       // 打开到数据库的最大连接数
 	MaxLifetime    int           `mapstructure:"max-lifetime" json:"max-lifetime" yaml:"max-lifetime"`             // 链接重置时间（分）
 	LogMode        string        `mapstructure:"log-mode" json:"log-mode" yaml:"log-mode"`                         // Gorm日志级别： silent、error、warn、info
-	LogInConsole   bool          `mapstructure:"log-in-console" json:"log-in-console" yaml:"log-in-console"`       // 输出控制台
 	SlowThreshold  int           `mapstructure:"slow-threshold" json:"slow-threshold" yaml:"slow-threshold"`       // 慢查询 毫秒 大于0有效
 	IgnoreNotFound bool          `mapstructure:"ignore-not-found" json:"ignore-not-found" yaml:"ignore-not-found"` //忽略无记录错误
 	DBS            map[string]DB `mapstructure:"dbs" json:"dbs" yaml:"dbs"`                                        //配置多db
+	//LogInConsole   bool          `mapstructure:"log-in-console" json:"log-in-console" yaml:"log-in-console"`       // 输出控制台
 }
 
 func (c *DBCfg) GetDriver(dbname string) string {
