@@ -19,6 +19,7 @@ import (
 *	right / iright  : like %xxx
 *	in
 *	isnull
+*	isnotnull 不为空
 *  	order 排序		e.g. order[key]=desc     order[key]=asc
 *   "-" 忽略该字段
 *  @Param table
@@ -57,6 +58,7 @@ const (
  *	right / iright  : like %xxx
  *	in
  *	isnull
+ *	isnotnull
  *  order 排序		e.g. order[key]=desc     order[key]=asc
  */
 func ResolveSearchQuery(driver string, q any, condition Condition, pTName string) {
@@ -118,21 +120,22 @@ func ResolveSearchQuery(driver string, q any, condition Condition, pTName string
 type QueryTag string
 
 const (
-	EQ     QueryTag = "eq"
-	LIKE   QueryTag = "like"
-	ILIKE  QueryTag = "ilike"
-	LEFT   QueryTag = "left"
-	ILEFT  QueryTag = "ileft"
-	RIGHT  QueryTag = "right"
-	IRIGHT QueryTag = "iright"
-	GT     QueryTag = "gt"
-	GTE    QueryTag = "gte"
-	LT     QueryTag = "lt"
-	LTE    QueryTag = "lte"
-	IN     QueryTag = "in"
-	ISNULL QueryTag = "isnull"
-	ORDER  QueryTag = "order"
-	JOIN   QueryTag = "join"
+	EQ        QueryTag = "eq"
+	LIKE      QueryTag = "like"
+	ILIKE     QueryTag = "ilike"
+	LEFT      QueryTag = "left"
+	ILEFT     QueryTag = "ileft"
+	RIGHT     QueryTag = "right"
+	IRIGHT    QueryTag = "iright"
+	GT        QueryTag = "gt"
+	GTE       QueryTag = "gte"
+	LT        QueryTag = "lt"
+	LTE       QueryTag = "lte"
+	IN        QueryTag = "in"
+	ISNULL    QueryTag = "isnull"
+	ISNOTNULL QueryTag = "isnotnull"
+	ORDER     QueryTag = "order"
+	JOIN      QueryTag = "join"
 )
 
 func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue reflect.Value, i int, tname string) {
@@ -181,6 +184,11 @@ func pgSql(driver string, t *resolveSearchTag, condition Condition, qValue refle
 	case ISNULL:
 		if !(qValue.Field(i).IsZero() && qValue.Field(i).IsNil()) {
 			condition.SetWhere(fmt.Sprintf("%s.%s isnull", t.Table, t.Column), make([]interface{}, 0))
+		}
+		return
+	case ISNOTNULL:
+		if !(qValue.Field(i).IsZero() && qValue.Field(i).IsNil()) {
+			condition.SetWhere(fmt.Sprintf("%s.%s is not null", t.Table, t.Column), make([]interface{}, 0))
 		}
 		return
 	case ORDER:
