@@ -42,6 +42,10 @@ func dbInit() {
 		Compress: true,
 	}
 
+	if Cfg.Logger.SqlFile != "" {
+		fileWriter.Filename = Cfg.Logger.Director + "/" + Cfg.Logger.SqlFile
+	}
+
 	var logWrite io.Writer
 
 	if Cfg.Logger.LogInConsole {

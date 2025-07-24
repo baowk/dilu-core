@@ -7,15 +7,21 @@ server:
   #write-timeout   #写超时 单位秒 默认20
   fs-type: local    #文件服务
 logger:             # 日志配置
+  logger:             # 日志配置
   level: debug # 级别
   prefix:    # 日志前缀
-  format:  # 输出
+  format:  # 输出格式 json
   director: temp/log      # 日志文件夹
-  #encode-level: LowercaseColorLevelEncoder # 编码级
+  encode-level: LowercaseColorLevelEncoder # 编码级
   stacktrace-key: # 栈名
   #max-age: 7                         # 日志留存时间 默认7天
   show-line: true # 显示行
   log-in-console: true # 输出控制台
+  debug-file: dilu.log
+  info-file: dilu.log
+  warn-file: dilu.log
+  error-file: dilu.log
+  sql-file: dilu.log
 jwt:                # JWT配置
   sign-key: 56n1KywHIPEkWWIxffGpp8Dfl3z5SjE5WBeDStc1T64klnpoAqHrHN01vnete123   # Token密钥
   expires: 10080    # Token过期时长（单位：分钟）

@@ -34,7 +34,7 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: logC.Director + "/debug.log",
+			//Filename: logC.Director + "/debug.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
@@ -47,6 +47,13 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
+
+		if logC.DebugFile != "" {
+			debugFile.Filename = logC.Director + "/" + logC.DebugFile
+		} else {
+			debugFile.Filename = logC.Director + "/debug.log"
+		}
+
 		if logC.Format == "json" {
 			debugHandler := slog.NewJSONHandler(debugFile, &opts)
 			levelHandler.AddHandler(slog.LevelDebug, debugHandler)
@@ -64,7 +71,7 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: logC.Director + "/info.log",
+			//Filename: logC.Director + "/info.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
@@ -77,8 +84,11 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		// infoHandler := slog.NewJSONHandler(infoFile, &opts)
-		// levelHandler.AddHandler(slog.LevelInfo, infoHandler)
+		if logC.InfoFile != "" {
+			infoFile.Filename = logC.Director + "/" + logC.InfoFile
+		} else {
+			infoFile.Filename = logC.Director + "/info.log"
+		}
 		if logC.Format == "json" {
 			infoHandler := slog.NewJSONHandler(infoFile, &opts)
 			levelHandler.AddHandler(slog.LevelInfo, infoHandler)
@@ -94,7 +104,7 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: logC.Director + "/warn.log",
+			//Filename: logC.Director + "/warn.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
@@ -106,6 +116,12 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			MaxBackups: logC.GetMaxBackups(),
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
+		}
+
+		if logC.WarnFile != "" {
+			warnFile.Filename = logC.Director + "/" + logC.WarnFile
+		} else {
+			warnFile.Filename = logC.Director + "/warn.log"
 		}
 		// warnHandler := slog.NewJSONHandler(warnFile, &opts)
 		// levelHandler.AddHandler(slog.LevelWarn, warnHandler)
@@ -123,7 +139,7 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 日志文件名，归档日志也会保存在对应目录下
 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 			// <processname>-lumberjack.log
-			Filename: logC.Director + "/error.log",
+			//Filename: logC.Director + "/error.log",
 
 			// backup的日志是否使用本地时间戳，默认使用UTC时间
 			LocalTime: true,
@@ -136,8 +152,12 @@ func InitLogger(logC config.LogCfg) *slog.Logger {
 			// 对backup的日志是否进行压缩，默认不压缩
 			Compress: true,
 		}
-		// errorHandler := slog.NewJSONHandler(errorFile, &opts)
-		// levelHandler.AddHandler(slog.LevelError, errorHandler)
+
+		if logC.ErrorFile != "" {
+			errorFile.Filename = logC.Director + "/" + logC.ErrorFile
+		} else {
+			errorFile.Filename = logC.Director + "/error.log"
+		}
 		if logC.Format == "json" {
 			errorHandler := slog.NewJSONHandler(errorFile, &opts)
 			levelHandler.AddHandler(slog.LevelError, errorHandler)
