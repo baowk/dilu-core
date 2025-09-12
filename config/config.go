@@ -17,6 +17,7 @@ type AppCfg struct {
 
 type ServerCfg struct {
 	Name         string `mapstructure:"name" json:"name" yaml:"name"`                            //appname
+	Node         int64  `mapstructure:"node" json:"node" yaml:"node"`                            //节点编号
 	RemoteEnable bool   `mapstructure:"remote-enable" json:"remote-enable" yaml:"remote-enable"` //是否开启远程配置
 	Mode         string `mapstructure:"mode" json:"mode" yaml:"mode"`                            //模式
 	Host         string `mapstructure:"host" json:"host" yaml:"host"`                            //启动host
