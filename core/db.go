@@ -42,8 +42,8 @@ func dbInit() {
 		Compress: true,
 	}
 
-	if Cfg.Logger.SqlFile != "" {
-		fileWriter.Filename = Cfg.Logger.Director + "/" + Cfg.Logger.SqlFile
+	if Cfg.Logger.OutputMode == "single" {
+		fileWriter.Filename = Cfg.Logger.Director + "/dilu.log"
 	}
 
 	var logWrite io.Writer
