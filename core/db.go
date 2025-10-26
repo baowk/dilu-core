@@ -12,10 +12,10 @@ import (
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/config"
 	"github.com/natefinch/lumberjack"
+	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
-	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -116,12 +116,12 @@ func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxI
 		db, err = gorm.Open(postgres.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	case Sqlite.String():
 		db, err = gorm.Open(sqlite.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
-	case Mssql.String():
-		db, err = gorm.Open(sqlserver.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
+	// case Mssql.String():
+	// 	db, err = gorm.Open(sqlserver.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	// case "oracle":
 	// 	db, err = gorm.Open(oracle.Open(dbc.DSN), &gorm.Config{})
-	// case "clickhouse":
-	// 	db, err = gorm.Open(clickhouse.Open(dbc.DSN), &gorm.Config{})
+	case ClickHouse.String():
+		db, err = gorm.Open(clickhouse.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
 	default:
 		err = errors.New("db err")
 	}

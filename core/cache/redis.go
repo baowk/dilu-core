@@ -70,7 +70,14 @@ func (c *RedisCache) SetNX(key string, val any, expiration time.Duration) error 
 		s = string(bs)
 	}
 
-	return c.redis.SetNX(context.TODO(), key, s, expiration).Err()
+	ok, err := c.redis.SetNX(context.TODO(), key, s, expiration).Result()
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+	return errors.New("set err")
 }
 
 func (c *RedisCache) Del(key string) error {
