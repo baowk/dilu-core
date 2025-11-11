@@ -18,10 +18,9 @@ import (
 	"github.com/baowk/dilu-core/core/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
 	"log/slog"
-
-	"gorm.io/gorm"
 )
 
 var (
@@ -129,58 +128,6 @@ func Run() {
 	slog.Info("Server exiting")
 	time.Sleep(time.Second * time.Duration(Cfg.Server.GetCloseWait()))
 }
-
-// func logInit() io.Writer {
-// 	//初始化日志
-// 	// Log = zapInit()
-// 	// zap.ReplaceGlobals(Log)
-// 	opts := slog.HandlerOptions{
-// 		AddSource: Cfg.Logger.ShowLine,
-// 		Level:     slog.LevelDebug,
-// 	}
-// 	var logW io.Writer
-
-// 	if Cfg.Logger.LogInConsole {
-// 		logW = os.Stdout
-// 	} else {
-// 		logW = &lumberjack.Logger{
-// 			// 日志文件名，归档日志也会保存在对应目录下
-// 			// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
-// 			// <processname>-lumberjack.log
-// 			Filename: Cfg.Logger.Director + "/dilu.log",
-
-// 			// backup的日志是否使用本地时间戳，默认使用UTC时间
-// 			LocalTime: true,
-// 			// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-// 			MaxSize: Cfg.Logger.GetMaxSize(),
-// 			// 旧日志保存的最大天数，默认保存所有旧日志文件
-// 			MaxAge: Cfg.Logger.GetMaxAge(),
-// 			// 旧日志保存的最大数量，默认保存所有旧日志文件
-// 			MaxBackups: Cfg.Logger.GetMaxBackups(),
-// 			// 对backup的日志是否进行压缩，默认不压缩
-// 			Compress: true,
-// 		}
-// 	}
-
-// 	switch Cfg.Logger.Level {
-// 	case "error":
-// 		opts.Level = slog.LevelError
-// 	case "warn":
-// 		opts.Level = slog.LevelWarn
-// 	case "info":
-// 		opts.Level = slog.LevelInfo
-// 	default:
-// 		opts.Level = slog.LevelDebug
-// 	}
-
-// 	if Cfg.Logger.Format == "json" {
-// 		Log = slog.New(slog.NewJSONHandler(logW, &opts))
-// 	} else {
-// 		Log = slog.New(slog.NewTextHandler(logW, &opts))
-// 	}
-// 	slog.SetDefault(Log)
-// 	return logW
-// }
 
 // 此方法仅用于配置了redis缓存
 func CacheRedis() (redis.UniversalClient, error) {
