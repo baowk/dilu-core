@@ -178,7 +178,7 @@ func (m *Memory) ExpireAt(key string, tm time.Time) error {
 
 func (m *Memory) Exists(key string) bool {
 	_, err := m.getItem(key)
-	return err != nil
+	return err == nil
 }
 
 func (m *Memory) MGet(keys ...string) ([]any, error) {
