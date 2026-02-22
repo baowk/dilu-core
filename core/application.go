@@ -14,8 +14,8 @@ import (
 	"github.com/baowk/dilu-core/common/utils/text"
 	"github.com/baowk/dilu-core/config"
 	"github.com/baowk/dilu-core/core/cache"
-	"github.com/baowk/dilu-core/core/locker"
 	"github.com/baowk/dilu-core/core/logger"
+	"github.com/bsm/redislock"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -30,7 +30,7 @@ var (
 	dbInitFlag bool // 数据库是否初始化
 	engine     http.Handler
 	dbs        = make(map[string]*gorm.DB, 0)
-	RedisLock  *locker.Redis
+	RedisLock  *redislock.Client
 	Started    = make(chan byte, 1)
 	ToClose    = make(chan byte, 1)
 	//lock      sync.RWMutex
@@ -69,7 +69,7 @@ func Init() {
 	Cache = cache.New(Cfg.Cache)
 	if Cache.Type() == "redis" {
 		r := Cache.(*cache.RedisCache)
-		RedisLock = locker.NewRedis(r.GetClient())
+		RedisLock = redislock.New(r.GetClient())
 	}
 	dbInit()
 }
