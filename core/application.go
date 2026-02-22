@@ -13,6 +13,7 @@ import (
 	"log/slog"
 
 	"github.com/baowk/dilu-core/common/consts"
+	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/common/utils/ips"
 	"github.com/baowk/dilu-core/common/utils/text"
 	"github.com/baowk/dilu-core/config"
@@ -52,6 +53,8 @@ func Init(cfg config.Config) error {
 	// 初始化日志
 	app.logger = logger.InitLogger(*cfg.GetLogCfg())
 
+	utils.Setup(cfg.GetServerCfg().GetNode())
+
 	// 初始化缓存
 	app.cache = cache.New(*cfg.GetCacheCfg())
 	if app.cache.Type() == "redis" {
@@ -72,16 +75,6 @@ func Init(cfg config.Config) error {
 func GetApp() *Application {
 	return app
 }
-
-// // NewApplication 创建新的应用实例
-// func NewApplication(cfg config.Config) *Application {
-// 	return &Application{
-// 		config:    cfg,
-// 		databases: make(map[string]*gorm.DB),
-// 		started:   make(chan struct{}, 1),
-// 		toClose:   make(chan struct{}, 1),
-// 	}
-// }
 
 // GetConfig 获取配置
 func (app *Application) GetConfig() config.Config {
@@ -184,7 +177,7 @@ func (app *Application) Run() error {
 
 	// 打印启动信息
 	fmt.Println(text.Green(`Dilu github:`) + text.Blue(`https://github.com/baowk/dilu`))
-	fmt.Println(text.Green(app.config.GetServerCfg().Name) + fmt.Sprintf(" %d ", app.config.GetServerCfg().Node) + text.Green("Server started ,Listen: ") + text.Red("[ "+addr+" ]"))
+	fmt.Println(text.Green(app.config.GetServerCfg().Name) + fmt.Sprintf(" %d ", app.config.GetServerCfg().GetNode()) + text.Green("Server started ,Listen: ") + text.Red("[ "+addr+" ]"))
 	fmt.Println(text.Yellow("Dilu Go Go Go ~ ~ ~ "))
 
 	if cfg.GetServerCfg().Mode != ModeProd.String() {

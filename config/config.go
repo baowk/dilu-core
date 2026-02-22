@@ -63,3 +63,10 @@ func (e *ServerCfg) GetWriteTimeout() int {
 	}
 	return e.WriteTimeout
 }
+
+func (e *ServerCfg) GetNode() int64 {
+	if e.Node < 1 {
+		e.Node = 1
+	}
+	return e.Node
+}

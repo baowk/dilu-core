@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/bsm/redislock v0.9.4
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
