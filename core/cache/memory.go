@@ -32,6 +32,10 @@ func (*Memory) Type() string {
 	return "memory"
 }
 
+func (m *Memory) IsRedis() bool {
+	return false
+}
+
 func (m *Memory) RealKey(key string) string {
 	return key
 }

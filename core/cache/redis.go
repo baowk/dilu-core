@@ -23,6 +23,10 @@ func (c *RedisCache) Type() string {
 	return "redis"
 }
 
+func (c *RedisCache) IsRedis() bool {
+	return true
+}
+
 func (c *RedisCache) RealKey(key string) string {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key

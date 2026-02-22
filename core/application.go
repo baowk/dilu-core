@@ -221,8 +221,7 @@ func (app *Application) Run() error {
 
 // CacheRedis 获取Redis客户端
 func (app *Application) CacheRedis() (redis.UniversalClient, error) {
-	cacheInstance := app.GetCache()
-	return cache.GetRedisClient(cacheInstance)
+	return cache.GetRedisClient(app.GetCache())
 }
 
 // WaitForStart 等待应用启动完成
@@ -246,4 +245,8 @@ func DB() *gorm.DB {
 
 func GetGinEngine() *gin.Engine {
 	return app.GetGinEngine()
+}
+
+func GetRedisLock() *redislock.Client {
+	return app.redisLock
 }
