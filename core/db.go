@@ -1,10 +1,8 @@
 package core
 
 import (
-	"database/sql"
-	"errors"
+	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"os"
 	"time"
@@ -21,182 +19,238 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func dbInit() {
+// DBManager 数据库管理器
+type DBManager struct {
+	databases map[string]*gorm.DB
+	logger    *slog.Logger
+}
 
-	// 始终创建文件写入器
-	fileWriter := &lumberjack.Logger{
-		// 日志文件名，归档日志也会保存在对应目录下
-		// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
-		// <processname>-lumberjack.log
-		Filename: _cfg.GetLogCfg().Director + "/sql.log",
+// NewDBManager 创建数据库管理器
+func NewDBManager(logger *slog.Logger) *DBManager {
+	return &DBManager{
+		databases: make(map[string]*gorm.DB),
+		logger:    logger,
+	}
+}
 
-		// backup的日志是否使用本地时间戳，默认使用UTC时间
-		LocalTime: true,
-		// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-		MaxSize: _cfg.GetLogCfg().GetMaxSize(),
-		// 旧日志保存的最大天数，默认保存所有旧日志文件
-		MaxAge: _cfg.GetLogCfg().GetMaxAge(),
-		// 旧日志保存的最大数量，默认保存所有旧日志文件
-		MaxBackups: _cfg.GetLogCfg().GetMaxBackups(),
-		// 对backup的日志是否进行压缩，默认不压缩
-		Compress: true,
+// dbInit 优化的数据库初始化方法
+func (app *Application) dbInit() error {
+	cfg := app.config
+	dbManager := NewDBManager(app.logger)
+
+	// 初始化日志写入器
+	logWriter, err := app.createLogWriter(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create log writer: %w", err)
 	}
 
-	if _cfg.GetLogCfg().OutputMode == "single" {
-		fileWriter.Filename = _cfg.GetLogCfg().Director + "/dilu.log"
+	// 初始化主数据库
+	if cfg.GetDBCfg().DSN != "" {
+		logMode := config.GetLogMode(cfg.GetDBCfg().LogMode)
+		db, err := dbManager.initDatabase(
+			cfg.GetDBCfg().Driver, cfg.GetDBCfg().DSN, cfg.GetDBCfg().Prefix,
+			consts.DB_DEF, logMode, cfg.GetDBCfg().SlowThreshold,
+			cfg.GetDBCfg().MaxIdleConns, cfg.GetDBCfg().MaxOpenConns,
+			cfg.GetDBCfg().MaxLifetime, cfg.GetDBCfg().Singular,
+			cfg.GetLogCfg().Color(), cfg.GetDBCfg().IgnoreNotFound, logWriter,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to initialize main database: %w", err)
+		}
+		app.databases[consts.DB_DEF] = db
 	}
 
-	var logWrite io.Writer
-
-	if _cfg.GetLogCfg().LogInConsole {
-		// 同时输出到文件和控制台
-		logWrite = io.MultiWriter(fileWriter, os.Stdout)
-	} else {
-		// 仅输出到文件
-		logWrite = fileWriter
-	}
-
-	if _cfg.GetDBCfg().DSN != "" {
-		logMode := config.GetLogMode(_cfg.GetDBCfg().LogMode)
-		initDb(_cfg.GetDBCfg().Driver, _cfg.GetDBCfg().DSN, _cfg.GetDBCfg().Prefix, consts.DB_DEF, logMode, _cfg.GetDBCfg().SlowThreshold,
-			_cfg.GetDBCfg().MaxIdleConns, _cfg.GetDBCfg().MaxOpenConns, _cfg.GetDBCfg().MaxLifetime, _cfg.GetDBCfg().Singular, _cfg.GetLogCfg().Color(), _cfg.GetDBCfg().IgnoreNotFound, logWrite)
-	}
-	for key, dbc := range _cfg.GetDBCfg().DBS {
+	// 初始化额外数据库
+	for key, dbc := range cfg.GetDBCfg().DBS {
 		if !dbc.Disable {
-			var logMode logger.LogLevel
-			if dbc.LogMode != "" {
-				logMode = config.GetLogMode(dbc.LogMode)
-			} else {
-				logMode = config.GetLogMode(_cfg.GetDBCfg().LogMode)
+			if err := app.initAdditionalDB(dbManager, key, dbc, cfg, logWriter); err != nil {
+				app.logger.Error("Failed to initialize additional database", "key", key, "error", err)
+				continue
 			}
-			prefix := dbc.Prefix
-			if prefix == "" && _cfg.GetDBCfg().Prefix != "" {
-				prefix = _cfg.GetDBCfg().Prefix
-			}
-			slow := dbc.SlowThreshold
-			if slow < 1 && _cfg.GetDBCfg().SlowThreshold > 0 {
-				slow = _cfg.GetDBCfg().SlowThreshold
-			}
-			singular := _cfg.GetDBCfg().Singular
-			maxIdle := dbc.MaxIdleConns
-			if maxIdle < 1 {
-				maxIdle = _cfg.GetDBCfg().GetMaxIdleConns()
-			}
-
-			maxOpen := dbc.MaxOpenConns
-			if maxOpen < 1 {
-				maxOpen = _cfg.GetDBCfg().GetMaxOpenConns()
-			}
-
-			maxLifetime := dbc.MaxLifetime
-			if maxLifetime < 1 {
-				maxLifetime = _cfg.GetDBCfg().GetMaxLifetime()
-			}
-			driver := dbc.Driver
-			if driver == "" && _cfg.GetDBCfg().Driver != "" {
-				driver = _cfg.GetDBCfg().Driver
-			}
-			ignoreNotFound := dbc.IgnoreNotFound
-			if !ignoreNotFound && _cfg.GetDBCfg().IgnoreNotFound {
-				ignoreNotFound = _cfg.GetDBCfg().IgnoreNotFound
-			}
-			initDb(driver, dbc.DSN, prefix, key, logMode, slow, maxIdle, maxOpen, maxLifetime, singular, _cfg.GetLogCfg().Color(), ignoreNotFound, logWrite)
 		}
 	}
 
+	return nil
 }
 
-func initDb(driver, dns, prefix, key string, logMode logger.LogLevel, slow, maxIdle, maxOpen, maxLifetime int, singular, color, ignoreNotFound bool, logWrite io.Writer) {
-	var db *gorm.DB
-	var err error
+// createLogWriter 创建日志写入器
+func (app *Application) createLogWriter(cfg config.Config) (io.Writer, error) {
+	logCfg := cfg.GetLogCfg()
+
+	fileWriter := &lumberjack.Logger{
+		Filename:   logCfg.Director + "/sql.log",
+		LocalTime:  true,
+		MaxSize:    logCfg.GetMaxSize(),
+		MaxAge:     logCfg.GetMaxAge(),
+		MaxBackups: logCfg.GetMaxBackups(),
+		Compress:   true,
+	}
+
+	if logCfg.OutputMode == "single" {
+		fileWriter.Filename = logCfg.Director + "/dilu.log"
+	}
+
+	if logCfg.LogInConsole {
+		return io.MultiWriter(fileWriter, os.Stdout), nil
+	}
+	return fileWriter, nil
+}
+
+// initAdditionalDB 初始化额外数据库
+func (app *Application) initAdditionalDB(
+	dbManager *DBManager, key string, dbc config.DB,
+	cfg config.Config, logWriter io.Writer,
+) error {
+	// 获取配置参数，使用默认值填充
+	logMode := app.getLogMode(dbc.LogMode, cfg.GetDBCfg().LogMode)
+	prefix := app.getPrefix(dbc.Prefix, cfg.GetDBCfg().Prefix)
+	slowThreshold := app.getSlowThreshold(dbc.SlowThreshold, cfg.GetDBCfg().SlowThreshold)
+	maxIdleConns := app.getMaxIdleConns(dbc.MaxIdleConns, cfg.GetDBCfg().MaxIdleConns)
+	maxOpenConns := app.getMaxOpenConns(dbc.MaxOpenConns, cfg.GetDBCfg().MaxOpenConns)
+	maxLifetime := app.getMaxLifetime(dbc.MaxLifetime, cfg.GetDBCfg().MaxLifetime)
+	driver := app.getDriver(dbc.Driver, cfg.GetDBCfg().Driver)
+	ignoreNotFound := dbc.IgnoreNotFound || cfg.GetDBCfg().IgnoreNotFound
+
+	// 初始化数据库连接
+	db, err := dbManager.initDatabase(
+		driver, dbc.DSN, prefix, key, logMode, slowThreshold,
+		maxIdleConns, maxOpenConns, maxLifetime,
+		cfg.GetDBCfg().Singular, cfg.GetLogCfg().Color(),
+		ignoreNotFound, logWriter,
+	)
+	if err != nil {
+		return err
+	}
+
+	app.mu.Lock()
+	app.databases[key] = db
+	app.mu.Unlock()
+	return nil
+}
+
+// 辅助方法获取配置参数
+func (app *Application) getLogMode(dbMode, defaultMode string) logger.LogLevel {
+	if dbMode != "" {
+		return config.GetLogMode(dbMode)
+	}
+	return config.GetLogMode(defaultMode)
+}
+
+func (app *Application) getPrefix(dbPrefix, defaultPrefix string) string {
+	if dbPrefix != "" {
+		return dbPrefix
+	}
+	return defaultPrefix
+}
+
+func (app *Application) getSlowThreshold(dbSlow, defaultSlow int) int {
+	if dbSlow > 0 {
+		return dbSlow
+	}
+	return defaultSlow
+}
+
+func (app *Application) getMaxIdleConns(dbMaxIdle, defaultMaxIdle int) int {
+	if dbMaxIdle > 0 {
+		return dbMaxIdle
+	}
+	return defaultMaxIdle
+}
+
+func (app *Application) getMaxOpenConns(dbMaxOpen, defaultMaxOpen int) int {
+	if dbMaxOpen > 0 {
+		return dbMaxOpen
+	}
+	return defaultMaxOpen
+}
+
+func (app *Application) getMaxLifetime(dbMaxLifetime, defaultMaxLifetime int) int {
+	if dbMaxLifetime > 0 {
+		return dbMaxLifetime
+	}
+	return defaultMaxLifetime
+}
+
+func (app *Application) getDriver(dbDriver, defaultDriver string) string {
+	if dbDriver != "" {
+		return dbDriver
+	}
+	return defaultDriver
+}
+
+// initDatabase 核心数据库初始化逻辑
+func (dm *DBManager) initDatabase(
+	driver, dsn, prefix, key string, logMode logger.LogLevel,
+	slowThreshold, maxIdleConns, maxOpenConns, maxLifetime int,
+	singular, color bool, ignoreNotFound bool, logWriter io.Writer,
+) (*gorm.DB, error) {
+	// 选择数据库驱动
+	var dialector gorm.Dialector
 	switch driver {
-	case Mysql.String():
-		db, err = gorm.Open(mysql.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
-	case Pgsql.String():
-		db, err = gorm.Open(postgres.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
-	case Sqlite.String():
-		db, err = gorm.Open(sqlite.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
-	// case Mssql.String():
-	// 	db, err = gorm.Open(sqlserver.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
-	// case "oracle":
-	// 	db, err = gorm.Open(oracle.Open(dbc.DSN), &gorm.Config{})
-	case ClickHouse.String():
-		db, err = gorm.Open(clickhouse.Open(dns), GetGromLogCfg(logMode, prefix, slow, singular, color, ignoreNotFound, logWrite))
+	case "mysql":
+		dialector = mysql.Open(dsn)
+	case "postgres":
+		dialector = postgres.Open(dsn)
+	case "sqlite":
+		dialector = sqlite.Open(dsn)
+	case "clickhouse":
+		dialector = clickhouse.Open(dsn)
 	default:
-		err = errors.New("db err")
+		return nil, fmt.Errorf("unsupported database driver: %s", driver)
 	}
-	if err != nil {
-		slog.Error("connect db err ", "dns", dns, "key", key, "err", err)
-		panic(err)
-	}
-	var sqlDB *sql.DB
-	sqlDB, err = db.DB()
-	if err != nil {
-		slog.Error("connect db err ", "dns", dns, "key", key, "err", err)
-		panic(err)
-	}
-	sqlDB.SetMaxIdleConns(maxIdle)
-	sqlDB.SetMaxOpenConns(maxOpen)
-	sqlDB.SetConnMaxLifetime(time.Minute * time.Duration(maxLifetime))
-	SetDb(key, db)
-	dbInitFlag = true
-}
 
-func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, singular, color, ignoreNotFound bool, logW io.Writer) *gorm.Config {
-	config := &gorm.Config{
+	// 创建GORM配置
+	gormConfig := &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix:   prefix,
 			SingularTable: singular,
 		},
-		//DisableForeignKeyConstraintWhenMigrating: true,
 	}
 
-	//filePath := path.Join(_cfg.GetLogCfg().Director, "%Y-%m-%d", "sql.log")
-	//w, _ := GetWriter(filePath)
-	slow := time.Duration(slowThreshold) * time.Millisecond
-	_default := logger.New(log.New(logW, prefix, log.LstdFlags), logger.Config{
-		SlowThreshold:             slow,
-		Colorful:                  color,
-		IgnoreRecordNotFoundError: ignoreNotFound,
-	})
-
-	config.Logger = _default.LogMode(logMode)
-
-	return config
-}
-
-func SetDb(key string, db *gorm.DB) {
-	// lock.Lock()
-	// defer lock.Unlock()
-	dbs[key] = db
-}
-
-// GetDb 获取所有map里的db数据
-func Dbs() map[string]*gorm.DB {
-	// lock.RLock()
-	// defer lock.RUnlock()
-	return dbs
-}
-
-func Db(name string) *gorm.DB {
-	// lock.RLock()
-	// defer lock.RUnlock()
-	if dbInitFlag {
-		if len(dbs) == 1 {
-			return dbs[consts.DB_DEF]
-		}
-		if db, ok := dbs[name]; !ok || db == nil {
-			slog.Error("db init err", "err", errors.New(name))
-			panic("db not init")
-		} else {
-			return db
-		}
-	} else {
-		return nil
+	// 连接数据库
+	db, err := gorm.Open(dialector, gormConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect database %s: %w", key, err)
 	}
+
+	// 配置连接池
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get sql.DB from gorm: %w", err)
+	}
+
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Minute)
+
+	// 测试连接
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database %s: %w", key, err)
+	}
+
+	dm.logger.Info("Database connected successfully", "key", key, "driver", driver)
+	dm.databases[key] = db
+	return db, nil
 }
 
-// 获取默认的（master）db
-func DB() *gorm.DB {
-	return Db(consts.DB_DEF)
+// GetDB 获取数据库连接
+func (dm *DBManager) GetDB(key string) (*gorm.DB, error) {
+	db, exists := dm.databases[key]
+	if !exists {
+		return nil, fmt.Errorf("database %s not found", key)
+	}
+	return db, nil
+}
+
+// Close 关闭所有数据库连接
+func (dm *DBManager) Close() error {
+	var lastErr error
+	for key, db := range dm.databases {
+		if sqlDB, err := db.DB(); err == nil {
+			if err := sqlDB.Close(); err != nil {
+				lastErr = fmt.Errorf("failed to close database %s: %w", key, err)
+			}
+		}
+	}
+	return lastErr
 }

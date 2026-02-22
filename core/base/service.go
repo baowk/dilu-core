@@ -20,14 +20,11 @@ type BaseService struct {
 * 获取数据库
  */
 func (s *BaseService) DB() *gorm.DB {
-	return core.Db(s.DbName)
+	return core.GetApp().Db(s.DbName)
 }
 
-/*
-* 获取缓存
- */
 func (s *BaseService) Cache() cache.ICache {
-	return core.Cache
+	return core.GetApp().GetCache()
 }
 
 /*
@@ -200,7 +197,7 @@ func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
 			GormPublic: GormPublic{},
 			Join:       make([]*GormJoin, 0),
 		}
-		ResolveSearchQuery(core.GetConfig().GetDBCfg().GetDriver(s.DbName), q, condition, q.TableName())
+		ResolveSearchQuery(core.GetApp().GetConfig().GetDBCfg().GetDriver(s.DbName), q, condition, q.TableName())
 		for _, join := range condition.Join {
 			if join == nil {
 				continue
