@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	Cfg        config.AppCfg
+	_cfg       config.Config
 	Log        *slog.Logger //*zap.Logger
 	Cache      cache.ICache
 	dbInitFlag bool // 数据库是否初始化
@@ -36,6 +36,14 @@ var (
 	//lock      sync.RWMutex
 )
 
+func SetConfig(cfg config.Config) {
+	_cfg = cfg
+}
+
+func GetConfig() config.Config {
+	return _cfg
+}
+
 func GetEngine() http.Handler {
 	return engine
 }
@@ -45,7 +53,7 @@ func SetEngine(aEngine http.Handler) {
 }
 
 func GetGinEngine() *gin.Engine {
-	if Cfg.Server.Mode == ModeProd.String() {
+	if _cfg.GetServerCfg().Mode == ModeProd.String() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	var r *gin.Engine
@@ -65,8 +73,9 @@ func GetGinEngine() *gin.Engine {
 }
 
 func Init() {
-	Log = logger.InitLogger(Cfg.Logger)
-	Cache = cache.New(Cfg.Cache)
+	fmt.Println("Server name*******", _cfg.GetServerCfg().Name)
+	Log = logger.InitLogger(*_cfg.GetLogCfg())
+	Cache = cache.New(*_cfg.GetCacheCfg())
 	if Cache.Type() == "redis" {
 		r := Cache.(*cache.RedisCache)
 		RedisLock = redislock.New(r.GetClient())
@@ -75,14 +84,14 @@ func Init() {
 }
 
 func Run() {
-	addr := fmt.Sprintf("%s:%d", Cfg.Server.GetHost(), Cfg.Server.GetPort())
+	addr := fmt.Sprintf("%s:%d", _cfg.GetServerCfg().GetHost(), _cfg.GetServerCfg().GetPort())
 
 	//服务启动参数
 	srv := &http.Server{
 		Addr:           addr,
 		Handler:        GetEngine(),
-		ReadTimeout:    time.Duration(Cfg.Server.GetReadTimeout()) * time.Second,
-		WriteTimeout:   time.Duration(Cfg.Server.GetWriteTimeout()) * time.Second,
+		ReadTimeout:    time.Duration(_cfg.GetServerCfg().GetReadTimeout()) * time.Second,
+		WriteTimeout:   time.Duration(_cfg.GetServerCfg().GetWriteTimeout()) * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
@@ -97,12 +106,12 @@ func Run() {
 	fmt.Println(text.Green("Dilu Server started ,Listen: ") + text.Red("[ "+addr+" ]"))
 	fmt.Println(text.Yellow("Dilu Go Go Go ~ ~ ~ "))
 
-	if Cfg.Server.Mode != ModeProd.String() {
+	if _cfg.GetServerCfg().Mode != ModeProd.String() {
 		//fmt.Printf("Swagger %s %s start\r\n", docs.SwaggerInfo.Title, docs.SwaggerInfo.Version)
-		fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://localhost:%d/swagger/index.html", Cfg.Server.Port)))
+		fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://localhost:%d/swagger/index.html", _cfg.GetServerCfg().Port)))
 		ip := ips.GetLocalHost()
 		if ip != "" {
-			fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://%s:%d/swagger/index.html", ip, Cfg.Server.Port)))
+			fmt.Println(text.Blue(fmt.Sprintf("Swagger: http://%s:%d/swagger/index.html", ip, _cfg.GetServerCfg().Port)))
 		}
 	}
 
@@ -126,7 +135,7 @@ func Run() {
 	}
 
 	slog.Info("Server exiting")
-	time.Sleep(time.Second * time.Duration(Cfg.Server.GetCloseWait()))
+	time.Sleep(time.Second * time.Duration(_cfg.GetServerCfg().GetCloseWait()))
 }
 
 // 此方法仅用于配置了redis缓存

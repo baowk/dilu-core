@@ -28,27 +28,27 @@ func dbInit() {
 		// 日志文件名，归档日志也会保存在对应目录下
 		// 若该值为空，则日志会保存到os.TempDir()目录下，日志文件名为
 		// <processname>-lumberjack.log
-		Filename: Cfg.Logger.Director + "/sql.log",
+		Filename: _cfg.GetLogCfg().Director + "/sql.log",
 
 		// backup的日志是否使用本地时间戳，默认使用UTC时间
 		LocalTime: true,
 		// 日志大小到达MaxSize(MB)就开始backup，默认值是100.
-		MaxSize: Cfg.Logger.GetMaxSize(),
+		MaxSize: _cfg.GetLogCfg().GetMaxSize(),
 		// 旧日志保存的最大天数，默认保存所有旧日志文件
-		MaxAge: Cfg.Logger.GetMaxAge(),
+		MaxAge: _cfg.GetLogCfg().GetMaxAge(),
 		// 旧日志保存的最大数量，默认保存所有旧日志文件
-		MaxBackups: Cfg.Logger.GetMaxBackups(),
+		MaxBackups: _cfg.GetLogCfg().GetMaxBackups(),
 		// 对backup的日志是否进行压缩，默认不压缩
 		Compress: true,
 	}
 
-	if Cfg.Logger.OutputMode == "single" {
-		fileWriter.Filename = Cfg.Logger.Director + "/dilu.log"
+	if _cfg.GetLogCfg().OutputMode == "single" {
+		fileWriter.Filename = _cfg.GetLogCfg().Director + "/dilu.log"
 	}
 
 	var logWrite io.Writer
 
-	if Cfg.Logger.LogInConsole {
+	if _cfg.GetLogCfg().LogInConsole {
 		// 同时输出到文件和控制台
 		logWrite = io.MultiWriter(fileWriter, os.Stdout)
 	} else {
@@ -56,51 +56,51 @@ func dbInit() {
 		logWrite = fileWriter
 	}
 
-	if Cfg.DBCfg.DSN != "" {
-		logMode := config.GetLogMode(Cfg.DBCfg.LogMode)
-		initDb(Cfg.DBCfg.Driver, Cfg.DBCfg.DSN, Cfg.DBCfg.Prefix, consts.DB_DEF, logMode, Cfg.DBCfg.SlowThreshold,
-			Cfg.DBCfg.MaxIdleConns, Cfg.DBCfg.MaxOpenConns, Cfg.DBCfg.MaxLifetime, Cfg.DBCfg.Singular, Cfg.Logger.Color(), Cfg.DBCfg.IgnoreNotFound, logWrite)
+	if _cfg.GetDBCfg().DSN != "" {
+		logMode := config.GetLogMode(_cfg.GetDBCfg().LogMode)
+		initDb(_cfg.GetDBCfg().Driver, _cfg.GetDBCfg().DSN, _cfg.GetDBCfg().Prefix, consts.DB_DEF, logMode, _cfg.GetDBCfg().SlowThreshold,
+			_cfg.GetDBCfg().MaxIdleConns, _cfg.GetDBCfg().MaxOpenConns, _cfg.GetDBCfg().MaxLifetime, _cfg.GetDBCfg().Singular, _cfg.GetLogCfg().Color(), _cfg.GetDBCfg().IgnoreNotFound, logWrite)
 	}
-	for key, dbc := range Cfg.DBCfg.DBS {
+	for key, dbc := range _cfg.GetDBCfg().DBS {
 		if !dbc.Disable {
 			var logMode logger.LogLevel
 			if dbc.LogMode != "" {
 				logMode = config.GetLogMode(dbc.LogMode)
 			} else {
-				logMode = config.GetLogMode(Cfg.DBCfg.LogMode)
+				logMode = config.GetLogMode(_cfg.GetDBCfg().LogMode)
 			}
 			prefix := dbc.Prefix
-			if prefix == "" && Cfg.DBCfg.Prefix != "" {
-				prefix = Cfg.DBCfg.Prefix
+			if prefix == "" && _cfg.GetDBCfg().Prefix != "" {
+				prefix = _cfg.GetDBCfg().Prefix
 			}
 			slow := dbc.SlowThreshold
-			if slow < 1 && Cfg.DBCfg.SlowThreshold > 0 {
-				slow = Cfg.DBCfg.SlowThreshold
+			if slow < 1 && _cfg.GetDBCfg().SlowThreshold > 0 {
+				slow = _cfg.GetDBCfg().SlowThreshold
 			}
-			singular := Cfg.DBCfg.Singular
+			singular := _cfg.GetDBCfg().Singular
 			maxIdle := dbc.MaxIdleConns
 			if maxIdle < 1 {
-				maxIdle = Cfg.DBCfg.GetMaxIdleConns()
+				maxIdle = _cfg.GetDBCfg().GetMaxIdleConns()
 			}
 
 			maxOpen := dbc.MaxOpenConns
 			if maxOpen < 1 {
-				maxOpen = Cfg.DBCfg.GetMaxOpenConns()
+				maxOpen = _cfg.GetDBCfg().GetMaxOpenConns()
 			}
 
 			maxLifetime := dbc.MaxLifetime
 			if maxLifetime < 1 {
-				maxLifetime = Cfg.DBCfg.GetMaxLifetime()
+				maxLifetime = _cfg.GetDBCfg().GetMaxLifetime()
 			}
 			driver := dbc.Driver
-			if driver == "" && Cfg.DBCfg.Driver != "" {
-				driver = Cfg.DBCfg.Driver
+			if driver == "" && _cfg.GetDBCfg().Driver != "" {
+				driver = _cfg.GetDBCfg().Driver
 			}
 			ignoreNotFound := dbc.IgnoreNotFound
-			if !ignoreNotFound && Cfg.DBCfg.IgnoreNotFound {
-				ignoreNotFound = Cfg.DBCfg.IgnoreNotFound
+			if !ignoreNotFound && _cfg.GetDBCfg().IgnoreNotFound {
+				ignoreNotFound = _cfg.GetDBCfg().IgnoreNotFound
 			}
-			initDb(driver, dbc.DSN, prefix, key, logMode, slow, maxIdle, maxOpen, maxLifetime, singular, Cfg.Logger.Color(), ignoreNotFound, logWrite)
+			initDb(driver, dbc.DSN, prefix, key, logMode, slow, maxIdle, maxOpen, maxLifetime, singular, _cfg.GetLogCfg().Color(), ignoreNotFound, logWrite)
 		}
 	}
 
@@ -151,7 +151,7 @@ func GetGromLogCfg(logMode logger.LogLevel, prefix string, slowThreshold int, si
 		//DisableForeignKeyConstraintWhenMigrating: true,
 	}
 
-	//filePath := path.Join(Cfg.Logger.Director, "%Y-%m-%d", "sql.log")
+	//filePath := path.Join(_cfg.GetLogCfg().Director, "%Y-%m-%d", "sql.log")
 	//w, _ := GetWriter(filePath)
 	slow := time.Duration(slowThreshold) * time.Millisecond
 	_default := logger.New(log.New(logW, prefix, log.LstdFlags), logger.Config{

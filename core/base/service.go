@@ -200,7 +200,7 @@ func (s *BaseService) MakeCondition(q Query) func(db *gorm.DB) *gorm.DB {
 			GormPublic: GormPublic{},
 			Join:       make([]*GormJoin, 0),
 		}
-		ResolveSearchQuery(core.Cfg.DBCfg.GetDriver(s.DbName), q, condition, q.TableName())
+		ResolveSearchQuery(core.GetConfig().GetDBCfg().GetDriver(s.DbName), q, condition, q.TableName())
 		for _, join := range condition.Join {
 			if join == nil {
 				continue
