@@ -1,6 +1,6 @@
 module github.com/baowk/dilu-core
 
-go 1.25
+go 1.26
 
 require (
 	github.com/bsm/redislock v0.9.4
