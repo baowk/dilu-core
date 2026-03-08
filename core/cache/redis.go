@@ -155,12 +155,15 @@ func (c *RedisCache) MGet(keys ...string) ([]any, error) {
 }
 
 func (c *RedisCache) MSet(pairs map[string]any) error {
-	if c.prefix != "" {
-		for i, key := range pairs {
-			pairs[i] = c.prefix + ":" + key.(string)
-		}
+	if c.prefix == "" {
+		return c.redis.MSet(context.TODO(), pairs).Err()
 	}
-	return c.redis.MSet(context.TODO(), pairs).Err()
+
+	withPrefix := make(map[string]any, len(pairs))
+	for key, val := range pairs {
+		withPrefix[c.prefix+":"+key] = val
+	}
+	return c.redis.MSet(context.TODO(), withPrefix).Err()
 }
 
 func (c *RedisCache) GetClient() redis.UniversalClient {

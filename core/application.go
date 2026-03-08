@@ -148,9 +148,7 @@ func (app *Application) GetGinEngine() *gin.Engine {
 	case *gin.Engine:
 		return engine
 	default:
-		log.Fatal("not support other engine")
-		os.Exit(-1)
-		return nil
+		panic("not support other engine")
 	}
 }
 
