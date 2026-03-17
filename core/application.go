@@ -38,6 +38,7 @@ type Application struct {
 	started    chan struct{}
 	toClose    chan struct{}
 	mu         sync.RWMutex
+	engineOnce sync.Once
 	dbInitFlag bool
 }
 
@@ -56,7 +57,11 @@ func Init(cfg config.Config) error {
 	utils.Setup(cfg.GetServerCfg().GetNode())
 
 	// 初始化缓存
-	app.cache = cache.New(*cfg.GetCacheCfg())
+	c, err := cache.New(*cfg.GetCacheCfg())
+	if err != nil {
+		return fmt.Errorf("cache initialization failed: %w", err)
+	}
+	app.cache = c
 	if app.cache.Type() == "redis" {
 		if r, ok := app.cache.(*cache.RedisCache); ok {
 			app.redisLock = redislock.New(r.GetClient())
@@ -126,30 +131,20 @@ func (app *Application) SetEngine(engine http.Handler) {
 
 // GetGinEngine 获取Gin引擎
 func (app *Application) GetGinEngine() *gin.Engine {
-	cfg := app.GetConfig()
-	if cfg.GetServerCfg().Mode == ModeProd.String() {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	app.engineOnce.Do(func() {
+		cfg := app.GetConfig()
+		if cfg.GetServerCfg().Mode == ModeProd.String() {
+			gin.SetMode(gin.ReleaseMode)
+		}
+		engine := gin.New()
+		app.mu.Lock()
+		app.engine = engine
+		app.mu.Unlock()
+	})
 
 	app.mu.RLock()
-	currentEngine := app.engine
-	app.mu.RUnlock()
-
-	if currentEngine == nil {
-		app.mu.Lock()
-		if app.engine == nil {
-			app.engine = gin.New()
-		}
-		currentEngine = app.engine
-		app.mu.Unlock()
-	}
-
-	switch engine := currentEngine.(type) {
-	case *gin.Engine:
-		return engine
-	default:
-		panic("not support other engine")
-	}
+	defer app.mu.RUnlock()
+	return app.engine.(*gin.Engine)
 }
 
 // Run 运行应用

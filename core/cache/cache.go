@@ -29,12 +29,12 @@ type ICache interface {
 	RealKey(key string) string
 }
 
-func New(conf config.CacheCfg) ICache {
+func New(conf config.CacheCfg) (ICache, error) {
 	if conf.GetType() == "redis" {
 		arr := strings.Split(conf.Addr, ";")
 		op := &redis.UniversalOptions{
 			Addrs:    arr,
-			Password: conf.Password, // no password set
+			Password: conf.Password,
 		}
 		if conf.DB > 0 {
 			op.DB = conf.DB
@@ -44,18 +44,12 @@ func New(conf config.CacheCfg) ICache {
 		}
 		rdb := redis.NewUniversalClient(op)
 
-		pong, err := rdb.Ping(context.Background()).Result()
-		if err != nil {
-			panic("redis connect ping failed, err:" + err.Error())
-		} else {
-			fmt.Println("redis connect ping response:", "pong", pong)
-			r := RedisCache{
-				redis:  rdb,
-				prefix: conf.Prefix,
-			}
-			return &r
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := rdb.Ping(ctx).Result(); err != nil {
+			return nil, fmt.Errorf("redis connect ping failed: %w", err)
 		}
-	} else {
-		return NewMemory()
+		return &RedisCache{redis: rdb, prefix: conf.Prefix}, nil
 	}
+	return NewMemory(), nil
 }

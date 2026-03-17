@@ -51,11 +51,3 @@ func (e *BaseApi) Page(c *gin.Context, list any, total int64, page, size int) {
 	pageResp(c, list, total, page, size)
 }
 
-//封装后代码路径指定到这里所以去掉
-// func (e *BaseApi) LogError(c *gin.Context, err error) {
-// 	core.Log.Error(fmt.Sprintf("REQID:%s", e.GetReqId(c)), zap.Error(err))
-// }
-
-// func (e *BaseApi) LogInfo(c *gin.Context, key string, val any) {
-// 	ccore.Log.Info("REQID"+e.GetReqId(c), zap.Reflect("data", data))
-// }

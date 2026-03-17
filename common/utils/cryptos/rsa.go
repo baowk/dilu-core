@@ -206,7 +206,7 @@ func RsaDecryptPkcs8(encryptedMsg, priKey []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedMsg)
+	return rsa.DecryptPKCS1v15(nil, privateKey, encryptedMsg)
 }
 
 // 私钥解密
@@ -215,13 +215,11 @@ func RsaDecrypt(encryptedMsg, priKey []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//return rsa.DecryptPKCS1v15(rand.Reader, privateKey, encryptedMsg)
-
 	partLen := privateKey.PublicKey.N.BitLen() / 8
 	chunks := split(encryptedMsg, partLen)
 	buffer := bytes.NewBufferString("")
 	for _, chunk := range chunks {
-		decrypted, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, chunk)
+		decrypted, err := rsa.DecryptPKCS1v15(nil, privateKey, chunk)
 		if err != nil {
 			return nil, err
 		}
@@ -353,44 +351,3 @@ func RsaPriKeyPkcs1To8(priPkcs1Key []byte) (string, error) {
 	return string(b), nil
 }
 
-// func RsaKeyFmt(key string) string {
-// 	if !strings.Contains(key, "-----\n") {
-// 		key = strings.Replace(key, "-----", "-----\n", 1)
-// 	}
-// 	if !strings.Contains(key, "\n-----END") {
-// 		key = strings.Replace(key, "-----END", "\n-----END", -1)
-// 	}
-// 	if strings.Contains(key, "\t") {
-// 		return strings.Replace(key, "\t", "", -1)
-// 	}
-// 	return key
-// 	// if strings.Contains(key, "\n\r") {
-// 	// 	return key, nil
-// 	// }
-// 	// if strings.Contains(key, "\r") {
-// 	// 	return strings.Replace(key, "\r", "\n\r", -1), nil
-// 	// }
-// 	// if strings.Contains(key, "-----") {
-// 	// 	fk := ""
-// 	// 	arr := strings.Split(key, "-----")
-// 	// 	for i := 0; i < len(arr); i++ {
-// 	// 		if arr[i] == "" {
-// 	// 			continue
-// 	// 		} else if strings.HasPrefix(strings.ToUpper(arr[i]), "BEGIN") {
-// 	// 			fk += "-----" + arr[i] + "-----\n\r"
-// 	// 		} else if len(arr[i]) > 64 {
-// 	// 			cnt := len(arr[i]) / 64
-// 	// 			for j := 0; j < cnt; j++ {
-// 	// 				fk += arr[i][j*64:(j+1)*64] + "\n\r"
-// 	// 			}
-// 	// 			if len(arr[i])%64 != 0 {
-// 	// 				fk += arr[i][cnt*64:] + "\n\r"
-// 	// 			}
-// 	// 		} else {
-// 	// 			fk += "-----" + arr[i] + "-----"
-// 	// 		}
-// 	// 	}
-// 	// 	return fk, nil
-// 	// }
-// 	// return key, nil
-// }

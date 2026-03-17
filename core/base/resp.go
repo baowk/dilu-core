@@ -30,14 +30,6 @@ type PageResp struct {
 
 type Option func(resp *Resp)
 
-// func NewResp(opts ...Option) *Resp {
-// 	r := new(Resp)
-// 	for _, f := range opts {
-// 		f(r)
-// 	}
-// 	return r
-// }
-
 func WithReqId(reqId string) Option {
 	return func(resp *Resp) {
 		resp.ReqId = reqId
@@ -89,7 +81,11 @@ func errer(c *gin.Context, err errs.IError) {
 
 func resMsg(c *gin.Context, code int, msg string, data ...any) {
 	if msg == "" {
-		msg = i18n.Lang.GetMsg(code, c)
+		if i18n.Lang != nil {
+			msg = i18n.Lang.GetMsg(code, c)
+		} else {
+			msg = http.StatusText(code)
+		}
 	}
 	if len(data) == 0 {
 		c.JSON(http.StatusOK, Resp{
@@ -116,7 +112,11 @@ func resMsg(c *gin.Context, code int, msg string, data ...any) {
 
 func resMsgWithAbort(c *gin.Context, code int, msg string, data ...any) {
 	if msg == "" {
-		msg = i18n.Lang.GetMsg(code, c)
+		if i18n.Lang != nil {
+			msg = i18n.Lang.GetMsg(code, c)
+		} else {
+			msg = http.StatusText(code)
+		}
 	}
 	if len(data) == 0 {
 		c.AbortWithStatusJSON(http.StatusOK, Resp{

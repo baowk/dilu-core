@@ -69,23 +69,29 @@ func GetLogMode(logmode string) logger.LogLevel {
 	}
 }
 
+const (
+	DefaultMaxIdleConns = 10  // 默认空闲连接数
+	DefaultMaxOpenConns = 30  // 默认最大连接数
+	DefaultMaxLifetime  = 120 // 默认连接存活时间（分钟）
+)
+
 func (c *DBCfg) GetMaxIdleConns() int {
 	if c.MaxIdleConns < 1 {
-		c.MaxIdleConns = 10
+		c.MaxIdleConns = DefaultMaxIdleConns
 	}
 	return c.MaxIdleConns
 }
 
 func (c *DBCfg) GetMaxOpenConns() int {
 	if c.MaxOpenConns < 1 {
-		c.MaxOpenConns = 30
+		c.MaxOpenConns = DefaultMaxOpenConns
 	}
 	return c.MaxOpenConns
 }
 
 func (c *DBCfg) GetMaxLifetime() int {
 	if c.MaxLifetime < 1 {
-		c.MaxLifetime = 120
+		c.MaxLifetime = DefaultMaxLifetime
 	}
 	return c.MaxLifetime
 }

@@ -250,7 +250,7 @@ func otherSql(driver string, t *resolveSearchTag, condition Condition, qValue re
 		return
 	case ISNOTNULL:
 		if !(qValue.Field(i).IsZero() && qValue.Field(i).IsNil()) {
-			condition.SetWhere(fmt.Sprintf("%s.%s is not null", t.Table, t.Column), make([]interface{}, 0))
+			condition.SetWhere(fmt.Sprintf("`%s`.`%s` is not null", t.Table, t.Column), make([]interface{}, 0))
 		}
 		return
 	case ORDER:

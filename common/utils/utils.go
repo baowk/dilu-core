@@ -69,16 +69,6 @@ func RandFromArrayString(array []string) string {
 }
 
 // 指定区间随机生成
-func RandFloat(min int, max int, precision int, unsigned bool) float64 {
-	r := mathrand.Intn(max-min) + min
-	isGreater := 1
-	if !unsigned && mathrand.Intn(2) == 0 {
-		isGreater = -1
-	}
-	return float64(r) / float64(10^precision) * float64(isGreater)
-}
-
-// 指定区间随机生成
 func RandNumber(min, max float64, precision int) (float64, error) {
 	r := mathrand.Float64()*(max-min) + min
 	return RoundFloat(r, precision)

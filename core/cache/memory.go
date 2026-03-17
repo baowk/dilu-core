@@ -11,15 +11,34 @@ import (
 	"github.com/spf13/cast"
 )
 
+const maxCASRetries = 16
+
 type item struct {
 	Value   string
 	Expired time.Time
 }
 
-// NewMemory memory模式
+// NewMemory memory模式，自带过期清理
 func NewMemory() *Memory {
-	return &Memory{
+	m := &Memory{
 		items: new(sync.Map),
+	}
+	go m.gc()
+	return m
+}
+
+// gc 定期清理过期的缓存项，避免内存泄漏
+func (m *Memory) gc() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for range ticker.C {
+		now := time.Now()
+		m.items.Range(func(key, value any) bool {
+			if it, ok := value.(*item); ok && it.Expired.Before(now) {
+				m.items.Delete(key)
+			}
+			return true
+		})
 	}
 }
 
@@ -120,7 +139,7 @@ func (m *Memory) Decr(key string) (int64, error) {
 
 // calculate 使用 CompareAndSwap 模式实现原子递增/递减
 func (m *Memory) calculate(key string, num int64) (int64, error) {
-	for {
+	for i := 0; i < maxCASRetries; i++ {
 		old, ok := m.items.Load(key)
 		if !ok {
 			return 0, fmt.Errorf("%s not exist", key)
@@ -148,40 +167,43 @@ func (m *Memory) calculate(key string, num int64) (int64, error) {
 		}
 		// CAS 失败，重试
 	}
+	return 0, fmt.Errorf("%s calculate failed after retries", key)
 }
 
 func (m *Memory) Expire(key string, dur time.Duration) error {
-	old, ok := m.items.Load(key)
-	if !ok {
-		return fmt.Errorf("%s not exist", key)
+	for i := 0; i < maxCASRetries; i++ {
+		old, ok := m.items.Load(key)
+		if !ok {
+			return fmt.Errorf("%s not exist", key)
+		}
+		it, ok := old.(*item)
+		if !ok {
+			return fmt.Errorf("%s type error", key)
+		}
+		newItem := &item{Value: it.Value, Expired: time.Now().Add(dur)}
+		if m.items.CompareAndSwap(key, old, newItem) {
+			return nil
+		}
 	}
-	it, ok := old.(*item)
-	if !ok {
-		return fmt.Errorf("%s type error", key)
-	}
-	newItem := &item{
-		Value:   it.Value,
-		Expired: time.Now().Add(dur),
-	}
-	m.items.CompareAndSwap(key, old, newItem)
-	return nil
+	return fmt.Errorf("%s expire failed after retries", key)
 }
 
 func (m *Memory) ExpireAt(key string, tm time.Time) error {
-	old, ok := m.items.Load(key)
-	if !ok {
-		return fmt.Errorf("%s not exist", key)
+	for i := 0; i < maxCASRetries; i++ {
+		old, ok := m.items.Load(key)
+		if !ok {
+			return fmt.Errorf("%s not exist", key)
+		}
+		it, ok := old.(*item)
+		if !ok {
+			return fmt.Errorf("%s type error", key)
+		}
+		newItem := &item{Value: it.Value, Expired: tm}
+		if m.items.CompareAndSwap(key, old, newItem) {
+			return nil
+		}
 	}
-	it, ok := old.(*item)
-	if !ok {
-		return fmt.Errorf("%s type error", key)
-	}
-	newItem := &item{
-		Value:   it.Value,
-		Expired: tm,
-	}
-	m.items.CompareAndSwap(key, old, newItem)
-	return nil
+	return fmt.Errorf("%s expire_at failed after retries", key)
 }
 
 func (m *Memory) Exists(key string) bool {
