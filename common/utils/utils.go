@@ -2,58 +2,77 @@ package utils
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/big"
+	mathrand "math/rand"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
 
-var characters string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+// cryptoRandIntn 使用 crypto/rand 生成 [0, n) 范围的安全随机数
+// 对常用的小范围值缓存 big.Int 避免每次分配
+var smallBigInts [256]*big.Int
 
-// 生成随机字符串
-func RandStringByLen(size int) string {
-	randomString := ""
-	rand.NewSource(time.Now().UnixNano())
-
-	for i := 0; i < size; i++ {
-		index := rand.Intn(len(characters))
-		randomString += string(characters[index])
+func init() {
+	for i := range smallBigInts {
+		smallBigInts[i] = big.NewInt(int64(i))
 	}
-	return randomString
 }
 
-// 生成随机字符串
-func RandNumberByLen(size int) string {
-	randomString := ""
-	rand.NewSource(time.Now().UnixNano())
-
-	for i := 0; i < size; i++ {
-		index := rand.Intn(10)
-		randomString += string(characters[index])
+func cryptoRandIntn(n int) int {
+	var bound *big.Int
+	if n > 0 && n < len(smallBigInts) {
+		bound = smallBigInts[n]
+	} else {
+		bound = big.NewInt(int64(n))
 	}
-	return randomString
+	val, err := rand.Int(rand.Reader, bound)
+	if err != nil {
+		return mathrand.Intn(n)
+	}
+	return int(val.Int64())
+}
+
+var characters string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+// 生成随机字符串（使用 crypto/rand）
+func RandStringByLen(size int) string {
+	result := make([]byte, size)
+	for i := 0; i < size; i++ {
+		result[i] = characters[cryptoRandIntn(len(characters))]
+	}
+	return string(result)
+}
+
+// 生成随机数字字符串（使用 crypto/rand）
+func RandNumberByLen(size int) string {
+	result := make([]byte, size)
+	for i := 0; i < size; i++ {
+		result[i] = characters[cryptoRandIntn(10)]
+	}
+	return string(result)
 }
 
 // 在数组中随机取一个
 func RandFromArray(array *[]any) any {
-	return (*array)[rand.Intn(len(*array))]
+	return (*array)[mathrand.Intn(len(*array))]
 }
 
 func RandFromArrayString(array []string) string {
-	return array[rand.Intn(len(array))]
+	return array[mathrand.Intn(len(array))]
 }
 
 // 指定区间随机生成
 func RandFloat(min int, max int, precision int, unsigned bool) float64 {
-	r := rand.Intn(max-min) + min
+	r := mathrand.Intn(max-min) + min
 	isGreater := 1
-	if !unsigned && rand.Intn(2) == 0 {
+	if !unsigned && mathrand.Intn(2) == 0 {
 		isGreater = -1
 	}
 	return float64(r) / float64(10^precision) * float64(isGreater)
@@ -61,7 +80,7 @@ func RandFloat(min int, max int, precision int, unsigned bool) float64 {
 
 // 指定区间随机生成
 func RandNumber(min, max float64, precision int) (float64, error) {
-	r := rand.Float64()*(max-min) + min
+	r := mathrand.Float64()*(max-min) + min
 	return RoundFloat(r, precision)
 }
 

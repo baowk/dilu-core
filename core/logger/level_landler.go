@@ -9,7 +9,7 @@ import (
 // LevelHandler 将不同级别的日志分发到对应的 slog.Handler
 type LevelHandler struct {
 	handlers map[slog.Level][]slog.Handler
-	mu       sync.Mutex
+	mu       sync.RWMutex
 }
 
 func NewLevelHandler() *LevelHandler {
@@ -18,7 +18,7 @@ func NewLevelHandler() *LevelHandler {
 	}
 }
 
-// AddHandler 添加级别对应的处理器
+// AddHandler 添加级别对应的处理器（仅在初始化阶段调用）
 func (h *LevelHandler) AddHandler(level slog.Level, handler slog.Handler) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -27,49 +27,54 @@ func (h *LevelHandler) AddHandler(level slog.Level, handler slog.Handler) {
 
 // Enabled 检查当前级别是否有对应的处理器
 func (h *LevelHandler) Enabled(_ context.Context, level slog.Level) bool {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	h.mu.RLock()
 	_, ok := h.handlers[level]
+	h.mu.RUnlock()
 	return ok
 }
 
 // Handle 分发日志记录到对应的处理器
 func (h *LevelHandler) Handle(ctx context.Context, r slog.Record) error {
-	h.mu.Lock()
+	h.mu.RLock()
 	handlers, ok := h.handlers[r.Level]
-	h.mu.Unlock()
+	h.mu.RUnlock()
 	if !ok {
 		return nil
 	}
 	for _, handler := range handlers {
-		handler.Handle(ctx, r)
-
+		if err := handler.Handle(ctx, r); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // WithAttrs 传递属性到所有子处理器
 func (h *LevelHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	newHandlers := make(map[slog.Level][]slog.Handler)
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	newHandlers := make(map[slog.Level][]slog.Handler, len(h.handlers))
 	for level, handlers := range h.handlers {
+		newH := make([]slog.Handler, 0, len(handlers))
 		for _, handler := range handlers {
-			newHandlers[level] = append(newHandlers[level], handler.WithAttrs(attrs))
+			newH = append(newH, handler.WithAttrs(attrs))
 		}
+		newHandlers[level] = newH
 	}
 	return &LevelHandler{handlers: newHandlers}
 }
 
 // WithGroup 传递组到所有子处理器
 func (h *LevelHandler) WithGroup(name string) slog.Handler {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	newHandlers := make(map[slog.Level][]slog.Handler)
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	newHandlers := make(map[slog.Level][]slog.Handler, len(h.handlers))
 	for level, handlers := range h.handlers {
+		newH := make([]slog.Handler, 0, len(handlers))
 		for _, handler := range handlers {
-			newHandlers[level] = append(newHandlers[level], handler.WithGroup(name))
+			newH = append(newH, handler.WithGroup(name))
 		}
+		newHandlers[level] = newH
 	}
 	return &LevelHandler{handlers: newHandlers}
 }

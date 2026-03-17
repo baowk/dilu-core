@@ -47,12 +47,12 @@ func CompPwd(hashPwd, srcPwd string) bool {
 func MD5File(filename string) string {
 	f, err := os.Open(filename)
 	if err != nil {
-		//fmt.Fprintf(os.Stderr, "dup2: %v\n", err)
 		return ""
 	}
-	md5 := md5.New()
-	io.Copy(md5, f)
-	MD5Str := hex.EncodeToString(md5.Sum(nil))
-	f.Close()
-	return MD5Str
+	defer f.Close()
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }

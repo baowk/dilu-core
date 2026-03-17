@@ -37,12 +37,18 @@ func (eh *DefaultErrorHandler) HandleError(c *gin.Context, err error) {
 		"client_ip", c.ClientIP(),
 	)
 
-	// 返回错误响应
-	c.JSON(http.StatusInternalServerError, gin.H{
-		"code":    http.StatusInternalServerError,
-		"message": "Internal Server Error",
-		"error":   err.Error(),
-	})
+	// 返回错误响应（不暴露内部错误详情）
+	if bizErr, ok := err.(*BusinessError); ok {
+		c.JSON(bizErr.Code, gin.H{
+			"code":    bizErr.Code,
+			"message": bizErr.Message,
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "Internal Server Error",
+		})
+	}
 }
 
 // HandlePanic 处理panic

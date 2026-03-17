@@ -87,9 +87,10 @@ func ParsePriKeyPkcs8(privateKeyPkcs8 []byte) (*rsa.PrivateKey, error) {
 	if privateKeyBlock == nil {
 		return nil, fmt.Errorf("Pkcs8无效的私钥")
 	}
-	// if privateKeyBlock == nil || privateKeyBlock.Type != "RSA PRIVATE KEY" {
-	// 	return nil, fmt.Errorf("Pkcs8无效的私钥")
-	// }
+	// 验证 PEM 类型，允许 RSA PRIVATE KEY 和 PRIVATE KEY（PKCS8 标准类型）
+	if privateKeyBlock.Type != "RSA PRIVATE KEY" && privateKeyBlock.Type != "PRIVATE KEY" {
+		return nil, fmt.Errorf("Pkcs8私钥类型不匹配: %s", privateKeyBlock.Type)
+	}
 	priKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes)
 	if err != nil {
 		return nil, err
@@ -241,13 +242,19 @@ func RSA_SignPkcs8(priKey string, message []byte) ([]byte, error) {
 
 // RsaSign 私钥加签
 func RsaSign(priKey, message []byte) ([]byte, error) {
-	privateKey, _ := ParsePriKey(priKey)
+	privateKey, err := ParsePriKey(priKey)
+	if err != nil {
+		return nil, fmt.Errorf("解析私钥失败: %w", err)
+	}
 	return RsaSignKey(privateKey, message)
 }
 
-// RsaSign Pkcs8私钥加签
+// RsaSignPkcs8 Pkcs8私钥加签
 func RsaSignPkcs8(priKey, message []byte) ([]byte, error) {
-	privateKey, _ := ParsePriKeyPkcs8(priKey)
+	privateKey, err := ParsePriKeyPkcs8(priKey)
+	if err != nil {
+		return nil, fmt.Errorf("解析Pkcs8私钥失败: %w", err)
+	}
 	return RsaSignKey(privateKey, message)
 }
 
@@ -289,13 +296,19 @@ func RSA_Verify(publicKeyPEM string, message []byte, signature []byte) error {
 
 // RsaVerify 公钥验签
 func RsaVerify(publicKeyPEM, message []byte, signature []byte) error {
-	publicKey, _ := ParsePubKey(publicKeyPEM)
+	publicKey, err := ParsePubKey(publicKeyPEM)
+	if err != nil {
+		return fmt.Errorf("解析公钥失败: %w", err)
+	}
 	hash := sha256.Sum256(message)
 	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA256, hash[:], signature)
 }
 
 func RsaVerifyWithHash(publicKeyPEM, message []byte, signature []byte, algorithm uint16) error {
-	publicKey, _ := ParsePubKey(publicKeyPEM)
+	publicKey, err := ParsePubKey(publicKeyPEM)
+	if err != nil {
+		return fmt.Errorf("解析公钥失败: %w", err)
+	}
 	switch algorithm {
 	case 1:
 		hash := sha1.Sum(message)

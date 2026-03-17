@@ -4,19 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cast"
 )
 
+// 默认 Redis 操作超时时间
+const defaultRedisTimeout = 3 * time.Second
+
 type RedisCache struct {
 	redis  redis.UniversalClient
 	prefix string
-	//mode  int8 //1 单机 2 cluster
-	//clusterClient *redis.ClusterClient
+}
 
+// ctx 创建带超时的 context，避免 Redis 操作无限挂起
+func (c *RedisCache) ctx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), defaultRedisTimeout)
 }
 
 func (c *RedisCache) Type() string {
@@ -38,7 +42,9 @@ func (c *RedisCache) Get(key string) (string, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Get(context.TODO(), key).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Get(ctx, key).Result()
 }
 
 func (c *RedisCache) Set(key string, val any, expiration time.Duration) error {
@@ -50,13 +56,14 @@ func (c *RedisCache) Set(key string, val any, expiration time.Duration) error {
 	if err != nil {
 		bs, err := json.Marshal(val)
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
 		s = string(bs)
 	}
 
-	return c.redis.Set(context.TODO(), key, s, expiration).Err()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Set(ctx, key, s, expiration).Err()
 }
 
 func (c *RedisCache) SetNX(key string, val any, expiration time.Duration) error {
@@ -68,13 +75,14 @@ func (c *RedisCache) SetNX(key string, val any, expiration time.Duration) error 
 	if err != nil {
 		bs, err := json.Marshal(val)
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
 		s = string(bs)
 	}
 
-	ok, err := c.redis.SetNX(context.TODO(), key, s, expiration).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	ok, err := c.redis.SetNX(ctx, key, s, expiration).Result()
 	if err != nil {
 		return err
 	}
@@ -88,82 +96,103 @@ func (c *RedisCache) Del(key string) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Del(context.TODO(), key).Err()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Del(ctx, key).Err()
 }
 
 func (c *RedisCache) HGet(hk, field string) (any, error) {
 	if c.prefix != "" {
 		hk = c.prefix + ":" + hk
 	}
-	return c.redis.HGet(context.TODO(), hk, field).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.HGet(ctx, hk, field).Result()
 }
 
 func (c *RedisCache) HDel(hk, fields string) error {
 	if c.prefix != "" {
 		hk = c.prefix + ":" + hk
 	}
-	return c.redis.HDel(context.TODO(), hk, fields).Err()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.HDel(ctx, hk, fields).Err()
 }
 
 func (c *RedisCache) Incr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Incr(context.TODO(), key).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Incr(ctx, key).Result()
 }
 
 func (c *RedisCache) Decr(key string) (int64, error) {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Decr(context.TODO(), key).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Decr(ctx, key).Result()
 }
 
 func (c *RedisCache) Expire(key string, expiration time.Duration) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.Expire(context.TODO(), key, expiration).Err()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.Expire(ctx, key, expiration).Err()
 }
 
 func (c *RedisCache) ExpireAt(key string, tm time.Time) error {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	return c.redis.ExpireAt(context.TODO(), key, tm).Err()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.ExpireAt(ctx, key, tm).Err()
 }
 
 func (c *RedisCache) Exists(key string) bool {
 	if c.prefix != "" {
 		key = c.prefix + ":" + key
 	}
-	exists, err := c.redis.Exists(context.TODO(), key).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	exists, err := c.redis.Exists(ctx, key).Result()
 	if err != nil {
 		return false
-	} else {
-		return exists > 0
 	}
+	return exists > 0
 }
 
 func (c *RedisCache) MGet(keys ...string) ([]any, error) {
 	if c.prefix != "" {
+		prefixed := make([]string, len(keys))
 		for i, key := range keys {
-			keys[i] = c.prefix + ":" + key
+			prefixed[i] = c.prefix + ":" + key
 		}
+		keys = prefixed
 	}
-	return c.redis.MGet(context.TODO(), keys...).Result()
+	ctx, cancel := c.ctx()
+	defer cancel()
+	return c.redis.MGet(ctx, keys...).Result()
 }
 
 func (c *RedisCache) MSet(pairs map[string]any) error {
+	ctx, cancel := c.ctx()
+	defer cancel()
 	if c.prefix == "" {
-		return c.redis.MSet(context.TODO(), pairs).Err()
+		return c.redis.MSet(ctx, pairs).Err()
 	}
 
 	withPrefix := make(map[string]any, len(pairs))
 	for key, val := range pairs {
 		withPrefix[c.prefix+":"+key] = val
 	}
-	return c.redis.MSet(context.TODO(), withPrefix).Err()
+	return c.redis.MSet(ctx, withPrefix).Err()
 }
 
 func (c *RedisCache) GetClient() redis.UniversalClient {

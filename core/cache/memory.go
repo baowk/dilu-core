@@ -25,7 +25,6 @@ func NewMemory() *Memory {
 
 type Memory struct {
 	items *sync.Map
-	mutex sync.RWMutex
 }
 
 func (*Memory) Type() string {
@@ -49,24 +48,19 @@ func (m *Memory) Get(key string) (string, error) {
 }
 
 func (m *Memory) getItem(key string) (*item, error) {
-	var err error
 	i, ok := m.items.Load(key)
 	if !ok {
 		return nil, errors.New("not exist")
 	}
-	switch i.(type) {
+	switch v := i.(type) {
 	case *item:
-		item := i.(*item)
-		if item.Expired.Before(time.Now()) {
-			//过期
-			_ = m.del(key)
-			//过期后删除
+		if v.Expired.Before(time.Now()) {
+			m.items.Delete(key)
 			return nil, errors.New("not exist")
 		}
-		return item, nil
+		return v, nil
 	default:
-		err = fmt.Errorf("value of %s type error", key)
-		return nil, err
+		return nil, fmt.Errorf("value of %s type error", key)
 	}
 }
 
@@ -75,16 +69,15 @@ func (m *Memory) Set(key string, val interface{}, expiration time.Duration) erro
 	if err != nil {
 		bs, err := json.Marshal(val)
 		if err != nil {
-			fmt.Println(err.Error())
 			return err
 		}
 		s = string(bs)
 	}
-	item := &item{
+	it := &item{
 		Value:   s,
 		Expired: time.Now().Add(expiration),
 	}
-	return m.setItem(key, item)
+	return m.setItem(key, it)
 }
 
 func (m *Memory) SetNX(key string, val interface{}, expiration time.Duration) error {
@@ -94,30 +87,27 @@ func (m *Memory) SetNX(key string, val interface{}, expiration time.Duration) er
 	return m.Set(key, val, expiration)
 }
 
-func (m *Memory) setItem(key string, item *item) error {
-	m.items.Store(key, item)
+func (m *Memory) setItem(key string, it *item) error {
+	m.items.Store(key, it)
 	return nil
 }
 
 func (m *Memory) Del(key string) error {
-	return m.del(key)
-}
-
-func (m *Memory) del(key string) error {
 	m.items.Delete(key)
 	return nil
 }
 
 func (m *Memory) HGet(hk, key string) (any, error) {
-	item, err := m.getItem(hk + key)
-	if err != nil || item == nil {
+	it, err := m.getItem(hk + key)
+	if err != nil || it == nil {
 		return "", err
 	}
-	return item.Value, err
+	return it.Value, err
 }
 
 func (m *Memory) HDel(hk, key string) error {
-	return m.del(hk + key)
+	m.items.Delete(hk + key)
+	return nil
 }
 
 func (m *Memory) Incr(key string) (int64, error) {
@@ -128,56 +118,70 @@ func (m *Memory) Decr(key string) (int64, error) {
 	return m.calculate(key, -1)
 }
 
+// calculate 使用 CompareAndSwap 模式实现原子递增/递减
 func (m *Memory) calculate(key string, num int64) (int64, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	item, err := m.getItem(key)
-	if err != nil {
-		return 0, err
-	}
+	for {
+		old, ok := m.items.Load(key)
+		if !ok {
+			return 0, fmt.Errorf("%s not exist", key)
+		}
+		it, ok := old.(*item)
+		if !ok {
+			return 0, fmt.Errorf("value of %s type error", key)
+		}
+		if it.Expired.Before(time.Now()) {
+			m.items.Delete(key)
+			return 0, errors.New("not exist")
+		}
 
-	if item == nil {
-		err = fmt.Errorf("%s not exist", key)
-		return 0, err
+		n, err := cast.ToInt64E(it.Value)
+		if err != nil {
+			return 0, err
+		}
+		n += num
+		newItem := &item{
+			Value:   strconv.FormatInt(n, 10),
+			Expired: it.Expired,
+		}
+		if m.items.CompareAndSwap(key, old, newItem) {
+			return n, nil
+		}
+		// CAS 失败，重试
 	}
-	var n int64
-	n, err = cast.ToInt64E(item.Value)
-	if err != nil {
-		return 0, err
-	}
-	n += num
-	item.Value = strconv.FormatInt(n, 10)
-	return n, m.setItem(key, item)
 }
 
 func (m *Memory) Expire(key string, dur time.Duration) error {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	item, err := m.getItem(key)
-	if err != nil {
-		return err
+	old, ok := m.items.Load(key)
+	if !ok {
+		return fmt.Errorf("%s not exist", key)
 	}
-	if item == nil {
-		err = fmt.Errorf("%s not exist", key)
-		return err
+	it, ok := old.(*item)
+	if !ok {
+		return fmt.Errorf("%s type error", key)
 	}
-	item.Expired = time.Now().Add(dur)
-	return m.setItem(key, item)
+	newItem := &item{
+		Value:   it.Value,
+		Expired: time.Now().Add(dur),
+	}
+	m.items.CompareAndSwap(key, old, newItem)
+	return nil
 }
 
 func (m *Memory) ExpireAt(key string, tm time.Time) error {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	item, err := m.getItem(key)
-	if err != nil {
-		return err
+	old, ok := m.items.Load(key)
+	if !ok {
+		return fmt.Errorf("%s not exist", key)
 	}
-	if item == nil {
-		err = fmt.Errorf("%s not exist", key)
-		return err
+	it, ok := old.(*item)
+	if !ok {
+		return fmt.Errorf("%s type error", key)
 	}
-	item.Expired = tm
-	return m.setItem(key, item)
+	newItem := &item{
+		Value:   it.Value,
+		Expired: tm,
+	}
+	m.items.CompareAndSwap(key, old, newItem)
+	return nil
 }
 
 func (m *Memory) Exists(key string) bool {
@@ -188,26 +192,20 @@ func (m *Memory) Exists(key string) bool {
 func (m *Memory) MGet(keys ...string) ([]any, error) {
 	var values []any
 	for _, key := range keys {
-		item, err := m.getItem(key)
+		it, err := m.getItem(key)
 		if err != nil {
 			return nil, err
 		}
-		if item == nil {
-			err = fmt.Errorf("%s not exist", key)
-			return nil, err
+		if it == nil {
+			return nil, fmt.Errorf("%s not exist", key)
 		}
-		values = append(values, item.Value)
+		values = append(values, it.Value)
 	}
 	return values, nil
 }
 
 func (m *Memory) MSet(pairs map[string]any) error {
 	for key, v := range pairs {
-		// item := &item{
-		// 	Value:   v, // 直接存储 value，不进行类型断言
-		// 	Expired: time.Now().Add(time.Hour * 24 * 365),
-		// }
-		// m.items.Store(key, item)
 		m.Set(key, v, time.Hour*24*365)
 	}
 	return nil
