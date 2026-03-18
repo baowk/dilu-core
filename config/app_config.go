@@ -16,6 +16,7 @@ type AppConfig struct {
 	Gen         GenCfg        `mapstructure:"gen" json:"gen" yaml:"gen"`
 	GrpcServer  GrpcServerCfg `mapstructure:"grpc-server" json:"grpc-server" yaml:"grpc-server"`
 	AccessLimit AccessLimit   `mapstructure:"access-limit" json:"access-limit" yaml:"access-limit"`
+	Rd          RdCfg         `mapstructure:"rd" json:"rd" yaml:"rd"`
 }
 
 // 确保AppConfig实现Config接口

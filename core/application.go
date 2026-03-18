@@ -40,6 +40,9 @@ type Application struct {
 	mu         sync.RWMutex
 	engineOnce sync.Once
 	dbInitFlag bool
+	health     *HealthService
+	monitor    *Monitor
+	registry   ServiceRegistry
 }
 
 // Init 初始化应用
@@ -74,6 +77,13 @@ func Init(cfg config.Config) error {
 	}
 
 	app.dbInitFlag = true
+
+	// 初始化健康检查和监控
+	app.health = NewHealthService(app.logger)
+	app.monitor = NewMonitor(app)
+	app.health.RegisterChecker(NewDatabaseHealthChecker(app))
+	app.health.RegisterChecker(NewCacheHealthChecker(app))
+
 	return nil
 }
 
@@ -143,6 +153,9 @@ func (app *Application) GetGinEngine() *gin.Engine {
 		app.mu.Lock()
 		app.engine = engine
 		app.mu.Unlock()
+
+		// 自动注册健康检查路由
+		app.RegisterHealthRoutes()
 	})
 
 	app.mu.RLock()
@@ -183,6 +196,31 @@ func (app *Application) Run() error {
 		}
 	}
 
+	// 自动注册到服务注册中心
+	if app.registry != nil {
+		healthURL := fmt.Sprintf("http://%s:%d/health", cfg.GetServerCfg().GetHost(), cfg.GetServerCfg().GetPort())
+		if cfg.GetServerCfg().GetHost() == "0.0.0.0" {
+			if localIP := ips.GetLocalHost(); localIP != "" {
+				healthURL = fmt.Sprintf("http://%s:%d/health", localIP, cfg.GetServerCfg().GetPort())
+			}
+		}
+		var tags []string
+		if ac, ok := cfg.(*config.AppConfig); ok {
+			tags = ac.Rd.Tags
+		}
+		if err := app.registry.Register(
+			cfg.GetServerCfg().Name,
+			cfg.GetServerCfg().GetHost(),
+			cfg.GetServerCfg().GetPort(),
+			healthURL,
+			tags,
+		); err != nil {
+			app.GetLogger().Error("服务注册失败", "error", err)
+		} else {
+			app.GetLogger().Info("服务已注册到注册中心")
+		}
+	}
+
 	app.GetLogger().Debug("服务初始化完毕")
 	close(app.started)
 	app.GetLogger().Debug("给信号量Started")
@@ -201,6 +239,12 @@ func (app *Application) Run() error {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		return fmt.Errorf("server shutdown failed: %w", err)
+	}
+
+	// 从注册中心注销
+	if app.registry != nil {
+		app.registry.Deregister()
+		app.GetLogger().Info("服务已从注册中心注销")
 	}
 
 	app.GetLogger().Info("Server exiting")
@@ -238,4 +282,68 @@ func GetGinEngine() *gin.Engine {
 
 func GetRedisLock() *redislock.Client {
 	return app.redisLock
+}
+
+// GetHealthService 获取健康检查服务
+func (app *Application) GetHealthService() *HealthService {
+	return app.health
+}
+
+// GetMonitor 获取监控器
+func (app *Application) GetMonitor() *Monitor {
+	return app.monitor
+}
+
+// RegisterHealthRoutes 在 Gin 引擎上注册健康检查和监控路由
+func (app *Application) RegisterHealthRoutes() {
+	engine := app.GetGinEngine()
+
+	// 健康检查端点 - 供 dilu-rd 心跳检测使用
+	engine.GET("/health", func(c *gin.Context) {
+		ctx := c.Request.Context()
+		results := app.health.CheckAll(ctx)
+		status := app.health.GetOverallStatus(results)
+
+		httpCode := http.StatusOK
+		if status == "unhealthy" {
+			httpCode = http.StatusServiceUnavailable
+		}
+
+		c.JSON(httpCode, gin.H{
+			"status":  status,
+			"checks":  results,
+			"service": app.config.GetServerCfg().Name,
+		})
+	})
+
+	// 监控指标端点
+	engine.GET("/metrics", func(c *gin.Context) {
+		metrics := app.monitor.CollectMetrics()
+		c.JSON(http.StatusOK, metrics)
+	})
+
+	// 路由导出端点 - 供 dilu-gateway 自动发现
+	engine.GET("/routes", func(c *gin.Context) {
+		type RouteInfo struct {
+			Method string `json:"method"`
+			Path   string `json:"path"`
+		}
+		routes := engine.Routes()
+		result := make([]RouteInfo, 0, len(routes))
+		for _, r := range routes {
+			// 排除内部管理端点
+			if r.Path == "/health" || r.Path == "/metrics" || r.Path == "/routes" {
+				continue
+			}
+			result = append(result, RouteInfo{
+				Method: r.Method,
+				Path:   r.Path,
+			})
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"service": app.config.GetServerCfg().Name,
+			"routes":  result,
+			"total":   len(result),
+		})
+	})
 }
