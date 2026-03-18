@@ -40,7 +40,15 @@ func (tc *testCase2) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, tc)
 }
 
+func skipIfNoRedis(t *testing.T) {
+	t.Helper()
+	if redisCache == nil {
+		t.Skip("Redis not available, skipping")
+	}
+}
+
 func TestString(t *testing.T) {
+	skipIfNoRedis(t)
 	if err := redisCache.Set("test", "tst", time.Minute*10); err != nil {
 		t.Error(err)
 	}
@@ -63,6 +71,7 @@ func TestString(t *testing.T) {
 }
 
 func TestRedisGS2(t *testing.T) {
+	skipIfNoRedis(t)
 	tc := testCase2{
 		Key: "aaa",
 		Val: 1,
@@ -119,9 +128,9 @@ var testGroup = []testCase{
 }
 
 func init() {
-	memCache = New(config.CacheCfg{Type: "memory"})
+	memCache, _ = New(config.CacheCfg{Type: "memory"})
 
-	redisCache = New(config.CacheCfg{
+	redisCache, _ = New(config.CacheCfg{
 		Addr:       "127.0.0.1:6379",
 		DB:         0,
 		MasterName: "",
@@ -135,6 +144,7 @@ func init() {
 }
 
 func TestRedisGS(t *testing.T) {
+	skipIfNoRedis(t)
 	tc := testCase{
 		Key: "aaa",
 		Val: 1,
@@ -163,6 +173,7 @@ func TestRedisGS(t *testing.T) {
 }
 
 func TestGetRedis(t *testing.T) {
+	skipIfNoRedis(t)
 	c, err := GetRedisClient(redisCache)
 	if err != nil {
 		t.Error(err)
@@ -257,8 +268,8 @@ func TestD(t *testing.T) {
 		t.Errorf("The values of is not %v\n", err)
 	}
 
-	if err := memCache.SetNX(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute); err != nil {
-		t.Errorf("The values of is not %v\n", err)
+	if err := memCache.SetNX(testGroup[idx].Key, testGroup[idx].Val, time.Duration(5)*time.Minute); err == nil {
+		t.Error("SetNX should fail on existing key")
 	}
 	str, err := memCache.Get(testGroup[idx].Key)
 	if err != nil {
