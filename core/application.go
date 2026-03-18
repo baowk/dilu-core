@@ -112,6 +112,9 @@ func (app *Application) GetCache() cache.ICache {
 func (app *Application) Db(name string) *gorm.DB {
 	app.mu.RLock()
 	defer app.mu.RUnlock()
+	if name == "" {
+		name = consts.DB_DEF
+	}
 	return app.databases[name]
 }
 
