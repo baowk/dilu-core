@@ -154,8 +154,8 @@ func (app *Application) GetGinEngine() *gin.Engine {
 		app.engine = engine
 		app.mu.Unlock()
 
-		// 自动注册健康检查路由
-		app.RegisterHealthRoutes()
+		// 自动注册健康检查路由（直接传 engine，避免 GetGinEngine 死锁）
+		app.registerHealthRoutesOn(engine)
 	})
 
 	app.mu.RLock()
@@ -294,10 +294,8 @@ func (app *Application) GetMonitor() *Monitor {
 	return app.monitor
 }
 
-// RegisterHealthRoutes 在 Gin 引擎上注册健康检查和监控路由
-func (app *Application) RegisterHealthRoutes() {
-	engine := app.GetGinEngine()
-
+// registerHealthRoutesOn 在指定的 Gin 引擎上注册健康检查和监控路由（内部使用，避免死锁）
+func (app *Application) registerHealthRoutesOn(engine *gin.Engine) {
 	// 健康检查端点 - 供 dilu-rd 心跳检测使用
 	engine.GET("/health", func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -346,4 +344,9 @@ func (app *Application) RegisterHealthRoutes() {
 			"total":   len(result),
 		})
 	})
+}
+
+// RegisterHealthRoutes 公开方法，向当前 Gin 引擎注册健康检查路由
+func (app *Application) RegisterHealthRoutes() {
+	app.registerHealthRoutesOn(app.GetGinEngine())
 }
