@@ -34,6 +34,7 @@ func New(conf config.CacheCfg) (ICache, error) {
 		arr := strings.Split(conf.Addr, ";")
 		op := &redis.UniversalOptions{
 			Addrs:    arr,
+			Username: conf.Username,
 			Password: conf.Password,
 		}
 		if conf.DB > 0 {
