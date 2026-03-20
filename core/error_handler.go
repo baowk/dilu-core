@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"log/slog"
+	"github.com/rs/zerolog"
 )
 
 // ErrorHandler 错误处理器接口
@@ -19,23 +19,23 @@ type ErrorHandler interface {
 
 // DefaultErrorHandler 默认错误处理器
 type DefaultErrorHandler struct {
-	logger *slog.Logger
+	logger zerolog.Logger
 }
 
 // NewDefaultErrorHandler 创建默认错误处理器
-func NewDefaultErrorHandler(logger *slog.Logger) *DefaultErrorHandler {
+func NewDefaultErrorHandler(logger zerolog.Logger) *DefaultErrorHandler {
 	return &DefaultErrorHandler{logger: logger}
 }
 
 // HandleError 处理普通错误
 func (eh *DefaultErrorHandler) HandleError(c *gin.Context, err error) {
 	// 记录错误日志
-	eh.logger.Error("Request error",
-		"method", c.Request.Method,
-		"url", c.Request.URL.String(),
-		"error", err.Error(),
-		"client_ip", c.ClientIP(),
-	)
+	eh.logger.Error().
+		Str("method", c.Request.Method).
+		Str("url", c.Request.URL.String()).
+		Err(err).
+		Str("client_ip", c.ClientIP()).
+		Msg("Request error")
 
 	// 返回错误响应（不暴露内部错误详情）
 	if bizErr, ok := err.(*BusinessError); ok {
@@ -55,13 +55,13 @@ func (eh *DefaultErrorHandler) HandleError(c *gin.Context, err error) {
 func (eh *DefaultErrorHandler) HandlePanic(c *gin.Context, recovered interface{}) {
 	// 记录panic日志
 	stack := string(debug.Stack())
-	eh.logger.Error("Panic recovered",
-		"method", c.Request.Method,
-		"url", c.Request.URL.String(),
-		"recovered", fmt.Sprintf("%v", recovered),
-		"stack", stack,
-		"client_ip", c.ClientIP(),
-	)
+	eh.logger.Error().
+		Str("method", c.Request.Method).
+		Str("url", c.Request.URL.String()).
+		Str("recovered", fmt.Sprintf("%v", recovered)).
+		Str("stack", stack).
+		Str("client_ip", c.ClientIP()).
+		Msg("Panic recovered")
 
 	// 返回错误响应
 	c.JSON(http.StatusInternalServerError, gin.H{
@@ -154,20 +154,20 @@ func (ves *ValidationErrors) HasErrors() bool {
 
 // ValidationErrorHandler 验证错误处理器
 type ValidationErrorHandler struct {
-	logger *slog.Logger
+	logger zerolog.Logger
 }
 
-func NewValidationErrorHandler(logger *slog.Logger) *ValidationErrorHandler {
+func NewValidationErrorHandler(logger zerolog.Logger) *ValidationErrorHandler {
 	return &ValidationErrorHandler{logger: logger}
 }
 
 func (veh *ValidationErrorHandler) HandleValidationError(c *gin.Context, errs *ValidationErrors) {
-	veh.logger.Warn("Validation errors",
-		"method", c.Request.Method,
-		"url", c.Request.URL.String(),
-		"errors", errs.Errors,
-		"client_ip", c.ClientIP(),
-	)
+	veh.logger.Warn().
+		Str("method", c.Request.Method).
+		Str("url", c.Request.URL.String()).
+		Interface("errors", errs.Errors).
+		Str("client_ip", c.ClientIP()).
+		Msg("Validation errors")
 
 	c.JSON(http.StatusBadRequest, gin.H{
 		"code":    http.StatusBadRequest,

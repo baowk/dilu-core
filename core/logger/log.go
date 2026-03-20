@@ -2,59 +2,24 @@ package logger
 
 import (
 	"context"
-	"log/slog"
+
+	"github.com/rs/zerolog"
 )
 
-// 统一日志调用接口
-// 所有项目应 import "github.com/baowk/dilu-core/core/logger" 而非直接 import "log/slog"
-// 未来如需替换日志库（zap、zerolog 等），只需修改此文件
+// 所有项目应 import "github.com/baowk/dilu-core/core/logger" 而非直接 import zerolog
+// 未来如需替换日志库，只需修改此文件
 
-// Debug 记录 Debug 级别日志
-func Debug(msg string, args ...any) {
-	slog.Debug(msg, args...)
-}
+func Debug() *zerolog.Event { return Log.Debug() }
+func Info() *zerolog.Event  { return Log.Info() }
+func Warn() *zerolog.Event  { return Log.Warn() }
+func Error() *zerolog.Event { return Log.Error() }
+func Fatal() *zerolog.Event { return Log.Fatal() }
 
-// Info 记录 Info 级别日志
-func Info(msg string, args ...any) {
-	slog.Info(msg, args...)
-}
+// Ctx 从 context 中取出 logger（用于链路追踪）
+func Ctx(ctx context.Context) *zerolog.Logger { return zerolog.Ctx(ctx) }
 
-// Warn 记录 Warn 级别日志
-func Warn(msg string, args ...any) {
-	slog.Warn(msg, args...)
-}
+// With 创建带固定字段的子 logger（如 logger.With().Str("module","auth").Logger()）
+func With() zerolog.Context { return Log.With() }
 
-// Error 记录 Error 级别日志
-func Error(msg string, args ...any) {
-	slog.Error(msg, args...)
-}
-
-// DebugContext 带 context 的 Debug 日志（用于链路追踪等场景）
-func DebugContext(ctx context.Context, msg string, args ...any) {
-	slog.DebugContext(ctx, msg, args...)
-}
-
-// InfoContext 带 context 的 Info 日志
-func InfoContext(ctx context.Context, msg string, args ...any) {
-	slog.InfoContext(ctx, msg, args...)
-}
-
-// WarnContext 带 context 的 Warn 日志
-func WarnContext(ctx context.Context, msg string, args ...any) {
-	slog.WarnContext(ctx, msg, args...)
-}
-
-// ErrorContext 带 context 的 Error 日志
-func ErrorContext(ctx context.Context, msg string, args ...any) {
-	slog.ErrorContext(ctx, msg, args...)
-}
-
-// With 创建带固定字段的子 logger（如 "module"="auth"）
-func With(args ...any) *slog.Logger {
-	return slog.Default().With(args...)
-}
-
-// Default 返回当前默认 logger 实例
-func Default() *slog.Logger {
-	return slog.Default()
-}
+// Default 返回全局 logger 实例
+func Default() zerolog.Logger { return Log }

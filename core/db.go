@@ -3,13 +3,14 @@ package core
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"time"
 
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/config"
+	diluLogger "github.com/baowk/dilu-core/core/logger"
 	"github.com/natefinch/lumberjack"
+	"github.com/rs/zerolog"
 	"gorm.io/driver/clickhouse"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -22,11 +23,11 @@ import (
 // DBManager 数据库管理器
 type DBManager struct {
 	databases map[string]*gorm.DB
-	logger    *slog.Logger
+	logger    zerolog.Logger
 }
 
 // NewDBManager 创建数据库管理器
-func NewDBManager(logger *slog.Logger) *DBManager {
+func NewDBManager(logger zerolog.Logger) *DBManager {
 	return &DBManager{
 		databases: make(map[string]*gorm.DB),
 		logger:    logger,
@@ -36,7 +37,7 @@ func NewDBManager(logger *slog.Logger) *DBManager {
 // dbInit 优化的数据库初始化方法
 func (app *Application) dbInit() error {
 	cfg := app.config
-	dbManager := NewDBManager(app.logger)
+	dbManager := NewDBManager(diluLogger.Log)
 
 	// 初始化日志写入器
 	logWriter, err := app.createLogWriter(cfg)
@@ -64,7 +65,7 @@ func (app *Application) dbInit() error {
 	for key, dbc := range cfg.GetDBCfg().DBS {
 		if !dbc.Disable {
 			if err := app.initAdditionalDB(dbManager, key, dbc, cfg, logWriter); err != nil {
-				app.logger.Error("Failed to initialize additional database", "key", key, "error", err)
+				diluLogger.Log.Error().Str("key", key).Err(err).Msg("Failed to initialize additional database")
 				continue
 			}
 		}
@@ -228,7 +229,7 @@ func (dm *DBManager) initDatabase(
 		return nil, fmt.Errorf("failed to ping database %s: %w", key, err)
 	}
 
-	dm.logger.Info("Database connected successfully", "key", key, "driver", driver)
+	dm.logger.Info().Str("key", key).Str("driver", driver).Msg("Database connected successfully")
 	dm.databases[key] = db
 	return db, nil
 }

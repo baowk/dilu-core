@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"log/slog"
-
 	"github.com/baowk/dilu-core/common/consts"
 	"github.com/baowk/dilu-core/common/utils"
 	"github.com/baowk/dilu-core/common/utils/ips"
@@ -30,7 +28,6 @@ var app *Application
 // Application 核心应用结构，替代全局变量
 type Application struct {
 	config     config.Config
-	logger     *slog.Logger
 	cache      cache.ICache
 	redisLock  *redislock.Client
 	engine     http.Handler
@@ -55,7 +52,7 @@ func Init(cfg config.Config) error {
 	}
 
 	// 初始化日志
-	app.logger = logger.InitLogger(*cfg.GetLogCfg())
+	logger.InitLogger(*cfg.GetLogCfg())
 
 	utils.Setup(cfg.GetServerCfg().GetNode())
 
@@ -79,7 +76,7 @@ func Init(cfg config.Config) error {
 	app.dbInitFlag = true
 
 	// 初始化健康检查和监控
-	app.health = NewHealthService(app.logger)
+	app.health = NewHealthService(logger.Log)
 	app.monitor = NewMonitor(app)
 	app.health.RegisterChecker(NewDatabaseHealthChecker(app))
 	app.health.RegisterChecker(NewCacheHealthChecker(app))
@@ -103,13 +100,6 @@ func (app *Application) SetConfig(cfg config.Config) {
 	app.mu.Lock()
 	defer app.mu.Unlock()
 	app.config = cfg
-}
-
-// GetLogger 获取日志实例
-func (app *Application) GetLogger() *slog.Logger {
-	app.mu.RLock()
-	defer app.mu.RUnlock()
-	return app.logger
 }
 
 // GetCache 获取缓存实例
@@ -215,15 +205,15 @@ func (app *Application) Run() error {
 			healthURL,
 			tags,
 		); err != nil {
-			app.GetLogger().Error("服务注册失败", "error", err)
+			logger.Error().Err(err).Msg("服务注册失败")
 		} else {
-			app.GetLogger().Info("服务已注册到注册中心")
+			logger.Info().Msg("服务已注册到注册中心")
 		}
 	}
 
-	app.GetLogger().Debug("服务初始化完毕")
+	logger.Debug().Msg("服务初始化完毕")
 	close(app.started)
-	app.GetLogger().Debug("给信号量Started")
+	logger.Debug().Msg("给信号量Started")
 
 	// 等待中断信号以优雅地关闭服务器
 	quit := make(chan os.Signal, 1)
@@ -235,7 +225,7 @@ func (app *Application) Run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	app.GetLogger().Info("Shutdown Server ...", "time", time.Now())
+	logger.Info().Time("time", time.Now()).Msg("Shutdown Server ...")
 
 	if err := srv.Shutdown(ctx); err != nil {
 		return fmt.Errorf("server shutdown failed: %w", err)
@@ -244,10 +234,10 @@ func (app *Application) Run() error {
 	// 从注册中心注销
 	if app.registry != nil {
 		app.registry.Deregister()
-		app.GetLogger().Info("服务已从注册中心注销")
+		logger.Info().Msg("服务已从注册中心注销")
 	}
 
-	app.GetLogger().Info("Server exiting")
+	logger.Info().Msg("Server exiting")
 	time.Sleep(time.Second * time.Duration(cfg.GetServerCfg().GetCloseWait()))
 	return nil
 }

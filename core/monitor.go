@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"log/slog"
+	"github.com/rs/zerolog"
 )
 
 // Metrics 性能指标
@@ -110,11 +110,11 @@ type HealthChecker interface {
 // HealthService 健康服务
 type HealthService struct {
 	checkers []HealthChecker
-	logger   *slog.Logger
+	logger   zerolog.Logger
 }
 
 // NewHealthService 创建健康服务
-func NewHealthService(logger *slog.Logger) *HealthService {
+func NewHealthService(logger zerolog.Logger) *HealthService {
 	return &HealthService{
 		checkers: make([]HealthChecker, 0),
 		logger:   logger,
@@ -124,7 +124,7 @@ func NewHealthService(logger *slog.Logger) *HealthService {
 // RegisterChecker 注册健康检查器
 func (hs *HealthService) RegisterChecker(checker HealthChecker) {
 	hs.checkers = append(hs.checkers, checker)
-	hs.logger.Info("Registered health checker", "name", checker.Name())
+	hs.logger.Info().Str("name", checker.Name()).Msg("Registered health checker")
 }
 
 // CheckAll 执行所有健康检查
@@ -136,11 +136,12 @@ func (hs *HealthService) CheckAll(ctx context.Context) []*HealthCheck {
 		results[i] = result
 		
 		if result.Status != "healthy" {
-			hs.logger.Warn("Health check failed", 
-				"name", result.Name, 
-				"status", result.Status, 
-				"message", result.Message,
-				"error", result.Error)
+			hs.logger.Warn().
+				Str("name", result.Name).
+				Str("status", result.Status).
+				Str("message", result.Message).
+				Str("error", result.Error).
+				Msg("Health check failed")
 		}
 	}
 	
