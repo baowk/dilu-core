@@ -21,29 +21,41 @@ type item struct {
 // NewMemory memory模式，自带过期清理
 func NewMemory() *Memory {
 	m := &Memory{
-		items: new(sync.Map),
+		items:  new(sync.Map),
+		stopCh: make(chan struct{}),
 	}
 	go m.gc()
 	return m
+}
+
+// Close 停止后台 GC goroutine，释放资源
+func (m *Memory) Close() {
+	close(m.stopCh)
 }
 
 // gc 定期清理过期的缓存项，避免内存泄漏
 func (m *Memory) gc() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		now := time.Now()
-		m.items.Range(func(key, value any) bool {
-			if it, ok := value.(*item); ok && it.Expired.Before(now) {
-				m.items.Delete(key)
-			}
-			return true
-		})
+	for {
+		select {
+		case <-ticker.C:
+			now := time.Now()
+			m.items.Range(func(key, value any) bool {
+				if it, ok := value.(*item); ok && it.Expired.Before(now) {
+					m.items.Delete(key)
+				}
+				return true
+			})
+		case <-m.stopCh:
+			return
+		}
 	}
 }
 
 type Memory struct {
-	items *sync.Map
+	items  *sync.Map
+	stopCh chan struct{}
 }
 
 func (*Memory) Type() string {
@@ -100,10 +112,23 @@ func (m *Memory) Set(key string, val interface{}, expiration time.Duration) erro
 }
 
 func (m *Memory) SetNX(key string, val interface{}, expiration time.Duration) error {
-	if m.Exists(key) {
+	s, err := cast.ToStringE(val)
+	if err != nil {
+		bs, err := json.Marshal(val)
+		if err != nil {
+			return err
+		}
+		s = string(bs)
+	}
+	it := &item{
+		Value:   s,
+		Expired: time.Now().Add(expiration),
+	}
+	_, loaded := m.items.LoadOrStore(key, it)
+	if loaded {
 		return errors.New("key exist")
 	}
-	return m.Set(key, val, expiration)
+	return nil
 }
 
 func (m *Memory) setItem(key string, it *item) error {

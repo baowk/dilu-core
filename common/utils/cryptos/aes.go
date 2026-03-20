@@ -1,7 +1,6 @@
 package cryptos
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -9,72 +8,99 @@ import (
 	"io"
 )
 
-// =================== CBC ======================
+// =================== GCM（推荐）======================
+// AES-GCM 同时提供保密性 + 完整性认证，无 Padding Oracle 风险。
+// 密文格式：nonce(12B) + ciphertext + tag(16B)
+
+// AesEncrypt 使用 AES-GCM 加密（推荐）
+// key 长度必须为 16、24 或 32 字节（对应 AES-128/192/256）
+func AesEncrypt(plaintext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, err
+	}
+	// Seal 将 nonce 作为前缀附加到密文
+	return gcm.Seal(nonce, nonce, plaintext, nil), nil
+}
+
+// AesDecrypt 使用 AES-GCM 解密，同时校验完整性（推荐）
+func AesDecrypt(ciphertext []byte, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize+gcm.Overhead() {
+		return nil, errors.New("ciphertext too short")
+	}
+	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		// 统一返回，不暴露是 nonce 还是 tag 校验失败
+		return nil, errors.New("decryption failed")
+	}
+	return plaintext, nil
+}
+
+// =================== CBC（兼容保留）======================
+// 注意：CBC 不提供消息认证，存在 Padding Oracle 攻击风险。
+// 新业务请使用 AesEncrypt / AesDecrypt（GCM）。
 
 // AesEncryptCBC 使用随机 IV 进行 AES-CBC 加密
-// 返回的密文格式：IV + ciphertext
-// key的长度必须为16, 24或者32
-func AesEncryptCBC(origData []byte, key []byte) (encrypted []byte, err error) {
+// 密文格式：IV(16B) + ciphertext
+// Deprecated: 请使用 AesEncrypt（GCM）替代
+func AesEncryptCBC(origData []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 	blockSize := block.BlockSize()
-	origData = pkcs5Padding(origData, blockSize)
+	origData = pkcs7Padding(origData, blockSize)
 
-	// 生成随机 IV
 	iv := make([]byte, blockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
 	}
+	cipher.NewCBCEncrypter(block, iv).CryptBlocks(origData, origData)
 
-	blockMode := cipher.NewCBCEncrypter(block, iv)
-	ciphertext := make([]byte, len(origData))
-	blockMode.CryptBlocks(ciphertext, origData)
-
-	// 将 IV 放在密文前面
-	encrypted = make([]byte, blockSize+len(ciphertext))
+	encrypted := make([]byte, blockSize+len(origData))
 	copy(encrypted[:blockSize], iv)
-	copy(encrypted[blockSize:], ciphertext)
-
+	copy(encrypted[blockSize:], origData)
 	return encrypted, nil
 }
 
 // AesDecryptCBC 解密 AES-CBC（从密文中提取 IV）
-// 密文格式：IV + ciphertext
-// key的长度必须为16, 24或者32
-func AesDecryptCBC(encrypted []byte, key []byte) (decrypted []byte, err error) {
+// Deprecated: 请使用 AesDecrypt（GCM）替代
+func AesDecryptCBC(encrypted []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
 	blockSize := block.BlockSize()
-
-	if len(encrypted) < blockSize*2 {
-		return nil, errors.New("ciphertext too short")
+	if len(encrypted) < blockSize*2 || len(encrypted)%blockSize != 0 {
+		return nil, errors.New("invalid ciphertext")
 	}
-	if len(encrypted)%blockSize != 0 {
-		return nil, errors.New("ciphertext is not a multiple of the block size")
-	}
-
-	// 提取 IV 和实际密文
-	iv := encrypted[:blockSize]
-	ciphertext := encrypted[blockSize:]
-
-	blockMode := cipher.NewCBCDecrypter(block, iv)
-	decrypted = make([]byte, len(ciphertext))
-	blockMode.CryptBlocks(decrypted, ciphertext)
-
-	decrypted, err = pkcs5UnPadding(decrypted)
-	if err != nil {
-		return nil, err
-	}
-	return decrypted, nil
+	iv, ciphertext := encrypted[:blockSize], encrypted[blockSize:]
+	decrypted := make([]byte, len(ciphertext))
+	cipher.NewCBCDecrypter(block, iv).CryptBlocks(decrypted, ciphertext)
+	return pkcs7UnPadding(decrypted, blockSize)
 }
 
-// AesEncryptCBCWithIV 使用指定 IV 进行 AES-CBC 加密（兼容旧接口）
-// 注意：固定 IV 不安全，建议使用 AesEncryptCBC
-func AesEncryptCBCWithIV(origData []byte, key []byte, iv []byte) (encrypted []byte, err error) {
+// AesEncryptCBCWithIV 使用指定 IV 进行 AES-CBC 加密
+// Deprecated: 固定 IV 不安全，请使用 AesEncrypt（GCM）替代
+func AesEncryptCBCWithIV(origData []byte, key []byte, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -83,15 +109,15 @@ func AesEncryptCBCWithIV(origData []byte, key []byte, iv []byte) (encrypted []by
 	if len(iv) != blockSize {
 		return nil, errors.New("IV length must equal block size")
 	}
-	origData = pkcs5Padding(origData, blockSize)
-	blockMode := cipher.NewCBCEncrypter(block, iv)
-	encrypted = make([]byte, len(origData))
-	blockMode.CryptBlocks(encrypted, origData)
+	origData = pkcs7Padding(origData, blockSize)
+	encrypted := make([]byte, len(origData))
+	cipher.NewCBCEncrypter(block, iv).CryptBlocks(encrypted, origData)
 	return encrypted, nil
 }
 
-// AesDecryptCBCWithIV 使用指定 IV 进行 AES-CBC 解密（兼容旧接口）
-func AesDecryptCBCWithIV(encrypted []byte, key []byte, iv []byte) (decrypted []byte, err error) {
+// AesDecryptCBCWithIV 使用指定 IV 进行 AES-CBC 解密
+// Deprecated: 固定 IV 不安全，请使用 AesDecrypt（GCM）替代
+func AesDecryptCBCWithIV(encrypted []byte, key []byte, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -103,36 +129,42 @@ func AesDecryptCBCWithIV(encrypted []byte, key []byte, iv []byte) (decrypted []b
 	if len(encrypted)%blockSize != 0 {
 		return nil, errors.New("ciphertext is not a multiple of the block size")
 	}
-	blockMode := cipher.NewCBCDecrypter(block, iv)
-	decrypted = make([]byte, len(encrypted))
-	blockMode.CryptBlocks(decrypted, encrypted)
-	decrypted, err = pkcs5UnPadding(decrypted)
-	if err != nil {
-		return nil, err
+	decrypted := make([]byte, len(encrypted))
+	cipher.NewCBCDecrypter(block, iv).CryptBlocks(decrypted, encrypted)
+	return pkcs7UnPadding(decrypted, blockSize)
+}
+
+// =================== 内部辅助 ======================
+
+func pkcs7Padding(data []byte, blockSize int) []byte {
+	padding := blockSize - len(data)%blockSize
+	padByte := byte(padding)
+	padded := make([]byte, len(data)+padding)
+	copy(padded, data)
+	for i := len(data); i < len(padded); i++ {
+		padded[i] = padByte
 	}
-	return decrypted, nil
+	return padded
 }
 
-func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
-	padding := blockSize - len(ciphertext)%blockSize
-	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append(ciphertext, padtext...)
-}
-
-func pkcs5UnPadding(origData []byte) ([]byte, error) {
-	length := len(origData)
+// pkcs7UnPadding 使用恒定时间比较，防止 Padding Oracle timing 攻击
+func pkcs7UnPadding(data []byte, blockSize int) ([]byte, error) {
+	length := len(data)
 	if length == 0 {
 		return nil, errors.New("empty data")
 	}
-	unpadding := int(origData[length-1])
-	if unpadding > length || unpadding == 0 {
+	padding := int(data[length-1])
+	// padding 合法范围：[1, blockSize]
+	if padding == 0 || padding > blockSize || padding > length {
 		return nil, errors.New("invalid padding")
 	}
-	// 验证所有 padding 字节是否一致
-	for i := length - unpadding; i < length; i++ {
-		if origData[i] != byte(unpadding) {
-			return nil, errors.New("invalid padding")
-		}
+	// 恒定时间遍历所有 padding 字节，消除 timing oracle
+	var invalid byte
+	for i := length - padding; i < length; i++ {
+		invalid |= data[i] ^ byte(padding)
 	}
-	return origData[:(length - unpadding)], nil
+	if invalid != 0 {
+		return nil, errors.New("invalid padding")
+	}
+	return data[:length-padding], nil
 }

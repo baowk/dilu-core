@@ -185,18 +185,20 @@ func TimeoutMiddleware(timeoutSeconds int) gin.HandlerFunc {
 
 		c.Request = c.Request.WithContext(ctx)
 
-		done := make(chan struct{})
+		// 使用带缓冲的 channel，防止 goroutine 在超时后泄漏
+		done := make(chan struct{}, 1)
 		go func() {
 			c.Next()
-			close(done)
+			done <- struct{}{}
 		}()
 
 		select {
 		case <-done:
 			// 正常完成
 		case <-ctx.Done():
-			// 超时或取消
-			c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
+			// 超时：先 Abort 阻止后续 handler 写响应，再写超时响应
+			c.Abort()
+			c.JSON(http.StatusRequestTimeout, gin.H{
 				"code":    http.StatusRequestTimeout,
 				"message": "Request timeout",
 			})
