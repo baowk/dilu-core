@@ -39,7 +39,6 @@ type Application struct {
 	dbInitFlag bool
 	health     *HealthService
 	monitor    *Monitor
-	registry   ServiceRegistry
 }
 
 // Init 初始化应用
@@ -186,31 +185,6 @@ func (app *Application) Run() error {
 		}
 	}
 
-	// 自动注册到服务注册中心
-	if app.registry != nil {
-		healthURL := fmt.Sprintf("http://%s:%d/health", cfg.GetServerCfg().GetHost(), cfg.GetServerCfg().GetPort())
-		if cfg.GetServerCfg().GetHost() == "0.0.0.0" {
-			if localIP := ips.GetLocalHost(); localIP != "" {
-				healthURL = fmt.Sprintf("http://%s:%d/health", localIP, cfg.GetServerCfg().GetPort())
-			}
-		}
-		var tags []string
-		if ac, ok := cfg.(*config.AppConfig); ok {
-			tags = ac.Rd.Tags
-		}
-		if err := app.registry.Register(
-			cfg.GetServerCfg().Name,
-			cfg.GetServerCfg().GetHost(),
-			cfg.GetServerCfg().GetPort(),
-			healthURL,
-			tags,
-		); err != nil {
-			logger.Error().Err(err).Msg("服务注册失败")
-		} else {
-			logger.Info().Msg("服务已注册到注册中心")
-		}
-	}
-
 	logger.Debug().Msg("服务初始化完毕")
 	close(app.started)
 	logger.Debug().Msg("给信号量Started")
@@ -229,12 +203,6 @@ func (app *Application) Run() error {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		return fmt.Errorf("server shutdown failed: %w", err)
-	}
-
-	// 从注册中心注销
-	if app.registry != nil {
-		app.registry.Deregister()
-		logger.Info().Msg("服务已从注册中心注销")
 	}
 
 	logger.Info().Msg("Server exiting")
